@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>俺たちの将棋 - Fixed</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body {
+            background-color: #222;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: sans-serif;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        /* UIパネル */
+        .ui-panel {
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        /* 持ち駒エリア */
+        .info-panel {
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+            box-sizing: border-box;
+            background: #333;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+        .hand {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            min-height: 40px;
+            align-items: center;
+            flex-grow: 1;
+            margin-left: 10px;
+        }
+        .hand-piece {
+            width: 32px;
+            height: 32px;
+            background-color: #f3cca0;
+            color: black;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .hand-piece.selected {
+            border: 2px solid #d32f2f;
+            background-color: #ffccbc;
+        }
+
+        /* 手番表示 */
+        #turn-indicator {
+            font-weight: bold;
+            color: #4fc3f7;
+            font-size: 1.2em;
+        }
+
+        /* 将棋盤コンテナ（回転用） */
+        #board-container {
+            transition: transform 0.5s ease;
+        }
+        .gote-view {
+            transform: rotate(180deg);
+        }
+
+        /* 将棋盤 */
+        #shogi-board {
+            display: grid;
+            grid-template-columns: repeat(9, 11vw);
+            grid-template-rows: repeat(9, 11vw);
+            max-width: 450px;
+            max-height: 500px;
+            border: 4px solid #d4a065;
+            background-color: #eebb77;
+            gap: 1px;
+        }
+        @media (min-width: 500px) {
+            #shogi-board {
+                grid-template-columns: repeat(9, 45px);
+                grid-template-rows: repeat(9, 50px);
+            }
+        }
+
+        /* 各マス */
+        .square {
+            background-color: #f3cca0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            position: relative;
+        }
+        .square:hover { background-color: #fcebc9; }
+        .gote-piece { transform: rotate(180deg); }
+
+        /* 選択中のマス */
+        .selected {
+            background-color: #ffeb3b !important;
+            box-shadow: inset 0 0 10px #ff9800;
+        }
+
+        /* ボタン */
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .btn-flip { background: #1976d2; color: white; }
+        .btn-reset { background: #d32f2f; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="ui-panel">
+        <div id="turn-indicator">System Ready</div>
+        <button class="btn btn-flip" onclick="toggleView()">🔄 視点切替</button>
+    </div>
+
+    <div class="info-panel">
+        <span>△後手:</span>
+        <div id="hand-gote" class="hand"></div>
+    </div>
+
+    <div id="board-container">
+        <div id="shogi-board"></div>
+    </div>
+
+    <div class="info-panel">
+        <span>▲先手:</span>
+        <div id="hand-sente" class="hand"></div>
+    </div>
+
+    <div style="margin-top:10px;">
+        <button class="btn btn-reset" onclick="resetGame()">盤面リセット</button>
+    </div>
+
+    <script>
+        // ▼▼▼ Firebase Config ▼▼▼
+        const firebaseConfig = {
+            apiKey: "AIzaSyDg2EgiI-DMzmoT20zF4VJfm1MxtmhdJQQ",
+            authDomain: "english-test-8ad4a.firebaseapp.com",
+            projectId: "english-test-8ad4a",
+            storageBucket: "english-test-8ad4a.firebasestorage.app",
+            messagingSenderId: "998730699699",
+            appId: "1:998730699699:web:8245c7259cec7dd20231c6",
+            measurementId: "G-FC2LRFVFGF",
+            databaseURL: "https://english-test-8ad4a-default-rtdb.firebaseio.com/" 
+        };
+        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // DOM要素
+        const boardElement = document.getElementById('shogi-board');
+        const boardContainer = document.getElementById('board-container');
+        const turnElement = document.getElementById('turn-indicator');
+        const handSenteElement = document.getElementById('hand-sente');
+        const handGoteElement = document.getElementById('hand-gote');
+
+        // ゲーム状態
+        let gameState = {
+            board: [],
+            turn: 'sente',
+            hands: { sente: [], gote: [] }
+        };
+
+        // ローカル状態
+        let selected = null; 
+        let isGoteView = false; 
+
+        // 成りマッピング
+        const promotionMap = {
+            '歩': 'と', '香': '成香', '桂': '成桂', '銀': '成銀', '角': '馬', '飛': '龍'
+        };
+        const demotionMap = {
+            'と': '歩', '成香': '香', '成桂': '桂', '成銀': '銀', '馬': '角', '龍': '飛',
+            '歩': '歩', '香': '香', '桂': '桂', '銀': '銀', '金': '金', '角': '角', '飛': '飛', '王': '王', '玉': '玉'
+        };
+
+        // --- 1. 同期処理 (修正済み) ---
+        db.ref('game').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                // ▼▼▼ CRITICAL FIX: 配列の穴埋め処理 ▼▼▼
+                // Firebaseはnullの行を削除するため、強制的に復活させる
+                if (!data.board) data.board = [];
+                for (let i = 0; i < 9; i++) {
+                    if (!data.board[i]) {
+                        data.board[i] = new Array(9).fill(null);
+                    }
+                }
+                // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+                gameState = data;
+                
+                // 持ち駒データの保護
+                if (!gameState.hands) gameState.hands = { sente: [], gote: [] };
+                if (!gameState.hands.sente) gameState.hands.sente = [];
+                if (!gameState.hands.gote) gameState.hands.gote = [];
+                
+                selected = null;
+                render();
+            } else {
+                resetGame(); // データなしなら初期化
+            }
+        });
+
+        // --- 2. 描画処理 ---
+        function render() {
+            const isSenteTurn = gameState.turn === 'sente';
+            turnElement.innerText = isSenteTurn ? "▲ 先手の番" : "△ 後手の番";
+            turnElement.style.color = isSenteTurn ? "#ef5350" : "#4fc3f7";
+            
+            renderBoard();
+            renderHands();
+        }
+
+        function renderBoard() {
+            boardElement.innerHTML = '';
+            for (let row = 0; row < 9; row++) {
+                // 安全策: 行が存在しない場合はスキップ（修正済みなので起きないはずだが念のため）
+                if (!gameState.board[row]) continue;
+
+                for (let col = 0; col < 9; col++) {
+                    const square = document.createElement('div');
+                    square.classList.add('square');
+                    square.onclick = () => onSquareClick(row, col);
+
+                    const cell = gameState.board[row][col];
+                    
+                    if (cell) {
+                        const pieceStr = typeof cell === 'object' ? cell.piece : cell;
+                        const owner = typeof cell === 'object' ? cell.owner : 'sente'; 
+
+                        square.innerText = pieceStr;
+                        if (owner === 'gote') square.classList.add('gote-piece');
+                    }
+
+                    if (selected && selected.type === 'board' && selected.row === row && selected.col === col) {
+                        square.classList.add('selected');
+                    }
+
+                    boardElement.appendChild(square);
+                }
+            }
+        }
+
+        function renderHands() {
+            renderHand(handSenteElement, gameState.hands.sente, 'sente');
+            renderHand(handGoteElement, gameState.hands.gote, 'gote');
+        }
+
+        function renderHand(container, pieces, owner) {
+            container.innerHTML = '';
+            pieces.forEach((piece, index) => {
+                const div = document.createElement('div');
+                div.classList.add('hand-piece');
+                div.innerText = piece;
+                div.onclick = () => onHandClick(owner, index, piece);
+                
+                if (selected && selected.type === 'hand' && selected.owner === owner && selected.index === index) {
+                    div.classList.add('selected');
+                }
+                container.appendChild(div);
+            });
+        }
+
+        // --- 3. 視点切替 ---
+        function toggleView() {
+            isGoteView = !isGoteView;
+            if (isGoteView) {
+                boardContainer.classList.add('gote-view');
+            } else {
+                boardContainer.classList.remove('gote-view');
+            }
+        }
+
+        // --- 4. 操作ロジック ---
+        function onSquareClick(row, col) {
+            // 行の安全確認
+            if (!gameState.board[row]) return;
+
+            const cell = gameState.board[row][col];
+
+            // A. 何も持っていない
+            if (!selected) {
+                if (cell && cell.owner === gameState.turn) {
+                    selected = { type: 'board', row, col };
+                    render();
+                }
+                return;
+            }
+
+            // B. 持ち駒を持っている (打つ)
+            if (selected.type === 'hand') {
+                if (!cell) {
+                    if (!gameState.board[row]) gameState.board[row] = [];
+                    gameState.board[row][col] = { piece: selected.piece, owner: gameState.turn };
+                    
+                    gameState.hands[gameState.turn].splice(selected.index, 1);
+                    endTurn();
+                } else {
+                    selected = null; render();
+                }
+                return;
+            }
+
+            // C. 盤面の駒を持っている (移動)
+            if (selected.type === 'board') {
+                if (selected.row === row && selected.col === col) { // キャンセル
+                    selected = null; render(); return;
+                }
+                if (cell && cell.owner === gameState.turn) { // 持ち替え
+                    selected = { type: 'board', row, col }; render(); return;
+                }
+
+                movePiece(selected.row, selected.col, row, col);
+            }
+        }
+
+        function onHandClick(owner, index, piece) {
+            if (owner !== gameState.turn) return;
+            if (selected && selected.type === 'hand' && selected.index === index) {
+                selected = null;
+            } else {
+                selected = { type: 'hand', owner, index, piece };
+            }
+            render();
+        }
+
+        function movePiece(fromRow, fromCol, toRow, toCol) {
+            // 安全確認
+            if (!gameState.board[fromRow]) return;
+            
+            const movingPiece = gameState.board[fromRow][fromCol];
+            const targetCell = gameState.board[toRow] ? gameState.board[toRow][toCol] : null;
+
+            // 1. キャプチャ
+            if (targetCell) {
+                const capturedPiece = demotionMap[targetCell.piece] || targetCell.piece;
+                gameState.hands[gameState.turn].push(capturedPiece);
+            }
+
+            // 2. 移動 & 成り判定
+            const pieceName = movingPiece.piece;
+            let finalPieceName = pieceName;
+            let canPromote = false;
+
+            if (promotionMap[pieceName]) {
+                const isSente = gameState.turn === 'sente';
+                if ((isSente && (toRow <= 2 || fromRow <= 2)) || 
+                    (!isSente && (toRow >= 6 || fromRow >= 6))) {
+                    canPromote = true;
+                }
+            }
+
+            if (canPromote) {
+                if (confirm("成りますか？")) {
+                    finalPieceName = promotionMap[pieceName];
+                }
+            }
+
+            if (!gameState.board[toRow]) gameState.board[toRow] = [];
+            gameState.board[toRow][toCol] = { piece: finalPieceName, owner: gameState.turn };
+            gameState.board[fromRow][fromCol] = null;
+
+            endTurn();
+        }
+
+        function endTurn() {
+            gameState.turn = (gameState.turn === 'sente') ? 'gote' : 'sente';
+            selected = null;
+            db.ref('game').set(gameState).catch(err => alert(err));
+        }
+
+        function resetGame() {
+            if(!confirm("初期配置に戻しますか？")) return;
+            
+            const initBoard = [];
+            for(let i=0; i<9; i++) initBoard[i] = new Array(9).fill(null);
+
+            const placement = [
+                ['香','桂','銀','金','王','金','銀','桂','香'],
+                ['','飛','','','','','','角',''],
+                ['歩','歩','歩','歩','歩','歩','歩','歩','歩'],
+                ['','','','','','','','',''],
+                ['','','','','','','','',''],
+                ['','','','','','','','',''],
+                ['歩','歩','歩','歩','歩','歩','歩','歩','歩'],
+                ['','角','','','','','','飛',''],
+                ['香','桂','銀','金','玉','金','銀','桂','香']
+            ];
+
+            for(let r=0; r<9; r++) {
+                for(let c=0; c<9; c++) {
+                    const p = placement[r][c];
+                    if(!p) continue;
+                    let owner = (r < 3) ? 'gote' : 'sente';
+                    initBoard[r][c] = { piece: p, owner: owner };
+                }
+            }
+
+            db.ref('game').set({
+                board: initBoard,
+                hands: { sente: [], gote: [] },
+                turn: 'sente'
+            });
+        }
+    </script>
+</body>
+</html>
