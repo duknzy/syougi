@@ -2,441 +2,951 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>俺たちの将棋 - Fixed</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RB Hybrid GP">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5776/5776097.png">
+
+    <title>RB Hybrid Learning System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        body {
-            background-color: #222;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            font-family: sans-serif;
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Inter:wght@400;600;800&family=Orbitron:wght@900&display=swap');
+        
+        :root {
+            --f1-red: #e10600;
+            --rb-navy: #0b0e14;
+            --neon-cyan: #00f0ff;
+            --neon-green: #39ff14;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden; 
+            background-color: var(--rb-navy);
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            touch-action: manipulation;
+            overscroll-behavior: none;
+            -webkit-user-select: none;
             user-select: none;
-            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* UIパネル */
-        .ui-panel {
-            width: 100%;
-            max-width: 420px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
+        body {
+            padding-top: max(1rem, env(safe-area-inset-top));
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
         }
 
-        /* 持ち駒エリア */
-        .info-panel {
-            width: 100%;
-            max-width: 420px;
-            display: flex;
-            justify-content: space-between;
-            padding: 5px;
-            box-sizing: border-box;
-            background: #333;
-            margin: 5px 0;
-            border-radius: 4px;
-            border: 1px solid #444;
-        }
-        .hand {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2px;
-            min-height: 40px;
-            align-items: center;
-            flex-grow: 1;
-            margin-left: 10px;
-        }
-        .hand-piece {
-            width: 32px;
-            height: 32px;
-            background-color: #f3cca0;
-            color: black;
-            font-weight: bold;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 16px;
-            box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-        .hand-piece.selected {
-            border: 2px solid #d32f2f;
-            background-color: #ffccbc;
+        .f1-font { font-family: 'Chakra Petch', sans-serif; }
+
+        .carbon-bg {
+            background-image: 
+                linear-gradient(rgba(11, 14, 20, 0.9), rgba(11, 14, 20, 0.95)),
+                url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            background-attachment: fixed;
+            background-size: cover;
         }
 
-        /* 手番表示 */
-        #turn-indicator {
-            font-weight: bold;
-            color: #4fc3f7;
-            font-size: 1.2em;
-        }
-
-        /* 将棋盤コンテナ（回転用） */
-        #board-container {
-            transition: transform 0.5s ease;
-        }
-        .gote-view {
-            transform: rotate(180deg);
-        }
-
-        /* 将棋盤 */
-        #shogi-board {
-            display: grid;
-            grid-template-columns: repeat(9, 11vw);
-            grid-template-rows: repeat(9, 11vw);
-            max-width: 450px;
-            max-height: 500px;
-            border: 4px solid #d4a065;
-            background-color: #eebb77;
-            gap: 1px;
-        }
-        @media (min-width: 500px) {
-            #shogi-board {
-                grid-template-columns: repeat(9, 45px);
-                grid-template-rows: repeat(9, 50px);
-            }
-        }
-
-        /* 各マス */
-        .square {
-            background-color: #f3cca0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            color: black;
-            font-weight: bold;
-            cursor: pointer;
+        #app {
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 1rem;
             position: relative;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
-        .square:hover { background-color: #fcebc9; }
-        .gote-piece { transform: rotate(180deg); }
+        #app::-webkit-scrollbar { display: none; }
 
-        /* 選択中のマス */
-        .selected {
-            background-color: #ffeb3b !important;
-            box-shadow: inset 0 0 10px #ff9800;
+        .race-card {
+            background: rgba(23, 28, 38, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border-top: 4px solid var(--f1-red);
         }
 
-        /* ボタン */
-        .btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
+        /* --- UI COMPONENTS --- */
+        .option-btn { 
+            transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            touch-action: manipulation;
         }
-        .btn-flip { background: #1976d2; color: white; }
-        .btn-reset { background: #d32f2f; color: white; }
+        .option-btn:active { transform: scale(0.96); background: rgba(255, 255, 255, 0.1); }
+        .option-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Idiom Chips */
+        .chip-btn {
+            transition: all 0.15s;
+            position: relative;
+            touch-action: manipulation;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            text-transform: none; /* 小文字維持 */
+        }
+        .chip-btn:active { transform: scale(0.95); }
+        
+        .chip-pool { 
+            background: linear-gradient(145deg, #252525, #151515); 
+            border: 1px solid #333; 
+            color: #e2e8f0; 
+            font-weight: 500;
+        }
+        .chip-slot { 
+            background: var(--f1-red); 
+            color: white; 
+            border: 1px solid #ff4d6d; 
+            font-weight: bold; 
+            box-shadow: 0 0 10px rgba(225, 6, 0, 0.4); 
+        }
+        .chip-correct { 
+            background: var(--neon-green) !important; 
+            color: black !important; 
+            border-color: var(--neon-green) !important; 
+            box-shadow: 0 0 15px var(--neon-green); 
+        }
+
+        .answer-slot {
+            min-height: 60px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 3px dashed var(--f1-red);
+            transition: all 0.3s ease;
+        }
+        .answer-slot.correct-lane {
+            border-bottom-style: solid;
+            border-color: var(--neon-green); 
+            box-shadow: 0 10px 30px -10px rgba(57, 255, 20, 0.3);
+        }
+        .answer-slot.wrong-lane {
+            border-color: var(--f1-red);
+            box-shadow: 0 0 15px rgba(225, 6, 0, 0.4);
+            background: rgba(225, 6, 0, 0.1);
+        }
+
+        /* Mode Switcher */
+        .mode-btn { transition: all 0.2s; opacity: 0.5; border-bottom: 2px solid transparent; }
+        .mode-btn.active { opacity: 1; border-bottom-color: var(--f1-red); color: white; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+
+        .accent-f1 { accent-color: var(--f1-red); }
+        .glitch-text { text-shadow: 2px 0 rgba(255,0,0,0.5), -2px 0 rgba(0,255,255,0.5); }
+
+        .tire-btn { opacity: 0.4; transform: scale(0.95); transition: all 0.2s; border-width: 2px; }
+        .tire-btn.active { opacity: 1; transform: scale(1); box-shadow: 0 0 15px rgba(255,255,255,0.1); }
+        .tire-soft.active { border-color: #ef4444; color: #ef4444; } 
+        .tire-medium.active { border-color: #eab308; color: #eab308; } 
+        .tire-hard.active { border-color: #f8fafc; color: #f8fafc; } 
+
+        input, select { font-size: 16px !important; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-in { animation: slideIn 0.3s ease-out forwards; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+        
+        .locked { opacity: 0.5; pointer-events: none; }
     </style>
 </head>
-<body>
+<body class="carbon-bg">
 
-    <div class="ui-panel">
-        <div id="turn-indicator">System Ready</div>
-        <button class="btn btn-flip" onclick="toggleView()">🔄 視点切替</button>
-    </div>
+    <div id="app" class="w-full max-w-2xl mx-auto flex flex-col justify-center">
+        
+        <div id="gate-screen" class="race-card p-8 rounded-2xl shadow-2xl text-center relative overflow-hidden animate-slide-in my-auto">
+            <h1 class="f1-font text-5xl mb-2 font-bold text-white tracking-wider">RB<span class="text-red-600">-26</span></h1>
+            <p class="text-gray-400 font-mono text-xs uppercase tracking-[0.4em] mb-12">Hybrid Learning System</p>
+            <button id="gate-login-btn" class="w-full f1-font bg-white hover:bg-gray-200 text-black px-8 py-4 rounded-xl font-bold tracking-widest uppercase transition-all shadow-lg flex items-center justify-center gap-3 active:scale-95">
+                <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.2,4.73C15.29,4.73 17.1,6.7 17.1,6.7L19,4.72C19,4.72 16.56,2 12.1,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.25,22C17.6,22 21.5,18.33 21.5,12.91C21.5,11.76 21.35,11.1 21.35,11.1V11.1Z" /></svg>
+                Sign In
+            </button>
+            <p id="login-status" class="mt-6 text-[10px] text-gray-600 font-mono">System Standby...</p>
+        </div>
 
-    <div class="info-panel">
-        <span>△後手:</span>
-        <div id="hand-gote" class="hand"></div>
-    </div>
+        <div id="start-screen" class="hidden race-card p-6 rounded-2xl relative z-10 animate-slide-in my-auto">
+            
+            <div class="flex justify-between items-end mb-6 border-b border-gray-800 pb-4">
+                <div class="text-left">
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest">Driver</p>
+                    </div>
+                    <p id="user-name" class="f1-font text-2xl text-white font-bold truncate max-w-[180px]">TEST DRIVER</p>
+                </div>
+                <button id="logout-btn" class="text-[10px] text-red-500 hover:text-white border border-red-900/50 hover:bg-red-600 px-3 py-1 rounded transition-colors uppercase tracking-wider">Sign Out</button>
+            </div>
 
-    <div id="board-container">
-        <div id="shogi-board"></div>
-    </div>
+            <div class="flex bg-black/40 p-1 rounded-xl mb-6 border border-gray-800">
+                <button onclick="quiz.switchMode('vocab')" id="mode-vocab" class="mode-btn active flex-1 py-3 text-xs font-bold uppercase tracking-widest f1-font">Vocab</button>
+                <button onclick="quiz.switchMode('idiom')" id="mode-idiom" class="mode-btn flex-1 py-3 text-xs font-bold uppercase tracking-widest f1-font">Idiom</button>
+            </div>
 
-    <div class="info-panel">
-        <span>▲先手:</span>
-        <div id="hand-sente" class="hand"></div>
-    </div>
+            <div id="vocab-settings" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4 mb-2">
+                    <div class="bg-black/30 p-3 rounded-xl border border-gray-800 text-center">
+                        <p class="text-[9px] text-gray-500 uppercase mb-1">Daily Laps</p>
+                        <span id="daily-laps-display" class="f1-font text-2xl text-white font-bold">0</span>
+                    </div>
+                    <div id="tire-status-box" class="bg-black/30 p-3 rounded-xl border border-gray-800 text-center relative overflow-hidden">
+                        <p class="text-[9px] text-gray-500 uppercase mb-1">Condition</p>
+                        <span id="mistake-count-display" class="f1-font text-xl text-green-500 font-bold">OPTIMAL</span>
+                        <div id="pit-alert-overlay" class="hidden absolute inset-0 bg-red-900/95 flex items-center justify-center cursor-pointer active:bg-red-800 transition-colors">
+                            <span class="f1-font text-white font-bold animate-pulse text-xs">PIT STOP REQ</span>
+                        </div>
+                    </div>
+                </div>
 
-    <div style="margin-top:10px;">
-        <button class="btn btn-reset" onclick="resetGame()">盤面リセット</button>
+                <div>
+                    <label class="text-gray-500 text-[10px] uppercase tracking-widest block mb-1 pl-1">Circuit Selection</label>
+                    <div class="relative">
+                        <select id="round-selector" class="w-full bg-black/50 text-white p-3 rounded-lg border border-gray-700 focus:border-red-500 outline-none font-mono text-base appearance-none"></select>
+                        <div class="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-500">▼</div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+                    <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-3 pl-1">Tire Compound (Length)</p>
+                    <div class="flex justify-between gap-2 mb-4">
+                        <button onclick="quiz.setTireStrategy(10, 'soft')" id="tire-soft" class="tire-btn tire-soft flex-1 bg-black/40 text-gray-400 p-2 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase tracking-wider active:bg-gray-800">Soft<br>10</button>
+                        <button onclick="quiz.setTireStrategy(20, 'medium')" id="tire-medium" class="tire-btn tire-medium active flex-1 bg-black/40 text-gray-400 p-2 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase tracking-wider active:bg-gray-800">Med<br>20</button>
+                        <button onclick="quiz.setTireStrategy(50, 'hard')" id="tire-hard" class="tire-btn tire-hard flex-1 bg-black/40 text-gray-400 p-2 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase tracking-wider active:bg-gray-800">Hard<br>50</button>
+                    </div>
+                    <div class="flex flex-col gap-3 border-t border-gray-800 pt-3">
+                        <label class="flex items-center justify-between cursor-pointer group p-1">
+                            <span class="text-xs font-bold text-gray-300 group-hover:text-cyan-400 transition-colors flex items-center gap-2"><span class="text-cyan-400">🔄</span> REVERSE GRID</span>
+                            <input type="checkbox" id="reverse-mode" class="accent-f1 w-5 h-5 cursor-pointer">
+                        </label>
+                        <label class="flex items-center justify-between cursor-pointer group p-1">
+                            <span class="text-xs font-bold text-gray-300 group-hover:text-green-400 transition-colors flex items-center gap-2"><span class="text-green-500">🔊</span> RACE ENGINEER</span>
+                            <input type="checkbox" id="audio-mode" class="accent-f1 w-5 h-5 cursor-pointer" checked>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="idiom-settings" class="hidden space-y-4">
+                <div class="bg-gray-900/50 p-6 rounded-xl border border-gray-800 text-center">
+                    <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-2">Total Idioms</p>
+                    <div class="f1-font text-5xl text-white font-bold" id="idiom-count-display">0</div>
+                    <p class="text-xs text-gray-500 mt-2">Sorting Challenge Mode</p>
+                </div>
+                <div class="bg-black/30 p-4 rounded-xl border border-gray-800 text-xs text-gray-400 leading-relaxed">
+                    <strong class="text-white block mb-1">INSTRUCTION:</strong>
+                    Arrange the shuffled chips to complete the sentence. Incorrect ordering will cause a temporary "Crash" penalty.
+                </div>
+            </div>
+
+            <button onclick="quiz.start()" class="mt-6 w-full f1-font bg-gradient-to-r from-red-600 to-red-700 active:from-red-700 active:to-red-800 text-white py-5 rounded-xl font-bold tracking-[0.2em] uppercase transition-all transform active:scale-95 shadow-lg shadow-red-900/30 text-xl border-b-4 border-red-900">Start Engine</button>
+            
+            <div id="vocab-tools" class="mt-4 pt-4 border-t border-gray-800">
+                <button onclick="quiz.openTelemetry()" class="w-full border border-gray-700 active:bg-gray-800 text-gray-400 py-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"><span>📊</span> Telemetry Data</button>
+            </div>
+        </div>
+        
+        <div id="telemetry-screen" class="hidden race-card p-6 rounded-2xl text-center border-t-4 border-blue-500 h-full overflow-y-auto my-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="f1-font text-2xl font-bold text-blue-400 tracking-widest">TELEMETRY</h2>
+                <button onclick="quiz.closeOverlay('telemetry-screen')" class="text-gray-400 active:text-white text-3xl p-2">&times;</button>
+            </div>
+            <div class="bg-black/50 p-2 rounded-xl mb-4 border border-gray-800 h-56 w-full relative">
+                <canvas id="weaknessRadarChart"></canvas>
+            </div>
+            <div class="text-left mb-4">
+                <h3 class="text-xs text-red-500 font-bold uppercase tracking-widest mb-2">Degradation Report</h3>
+                <div id="worst-words-list" class="space-y-1 max-h-60 overflow-y-auto pr-2"></div>
+            </div>
+        </div>
+
+        <div id="quiz-screen" class="hidden race-card p-6 rounded-2xl shadow-2xl relative flex flex-col justify-between my-auto min-h-[500px]">
+            <div class="flex justify-between items-start mb-6">
+                <div class="flex flex-col text-left">
+                    <span id="circuit-name" class="f1-font text-[10px] text-gray-400 uppercase tracking-widest">ROUND 1</span>
+                    <span id="question-number" class="f1-font text-white font-bold text-lg">LAP 1/20</span>
+                </div>
+                <div class="text-right">
+                    <div id="timer" class="f1-font text-2xl text-yellow-400 font-mono">0.00s</div>
+                    <div id="streak-display" class="f1-font text-[10px] text-green-500 font-bold uppercase tracking-widest hidden">PURPLE SECTOR</div>
+                </div>
+            </div>
+            <div class="w-full bg-gray-800 h-1 mb-8 rounded-full overflow-hidden">
+                <div id="progress-fill" class="bg-gradient-to-r from-red-600 to-yellow-500 h-full w-0 transition-all duration-300"></div>
+            </div>
+            
+            <div id="vocab-interface" class="flex-grow flex flex-col justify-between hidden">
+                <div class="flex-grow flex flex-col items-center justify-center mb-8 relative">
+                    <div class="absolute -top-6 text-gray-500 text-[10px] uppercase tracking-widest" id="question-label">Target</div>
+                    <h2 id="target-word" class="f1-font text-4xl md:text-5xl font-bold text-white tracking-wide drop-shadow-xl break-words px-2 text-center transition-all"></h2>
+                    <button id="speak-btn" class="mt-4 text-gray-500 active:text-cyan-400 transition-colors p-4 rounded-full border border-gray-700 bg-black/40 active:bg-black/80">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                    </button>
+                </div>
+                <div id="options-container" class="grid grid-cols-1 gap-3"></div>
+            </div>
+
+            <div id="idiom-interface" class="flex-grow flex flex-col justify-between hidden">
+                 <div class="flex-grow flex flex-col items-center">
+                    <div id="idiom-japanese" class="f1-font text-xl md:text-2xl font-bold text-gray-200 tracking-wide text-center mb-6 break-words w-full">Loading...</div>
+                    <div class="w-full mb-4 px-1">
+                        <div class="flex flex-wrap items-center justify-center gap-3 mb-2">
+                            <span id="idiom-prefix" class="text-gray-400 f1-font text-lg"></span>
+                            <div id="answer-slot" class="answer-slot flex flex-wrap gap-2 items-center justify-center p-3 rounded-lg min-w-[120px]"></div>
+                            <span id="idiom-suffix" class="text-gray-400 f1-font text-lg"></span>
+                        </div>
+                    </div>
+                </div>
+                <div id="word-pool" class="flex flex-wrap justify-center gap-3 w-full mt-auto p-4 bg-black/40 rounded-xl border border-gray-800"></div>
+                <button id="idiom-next-btn" class="hidden mt-4 w-full f1-font bg-[#39ff14] text-black py-4 rounded-xl font-bold tracking-widest uppercase shadow-[0_0_20px_rgba(57,255,20,0.3)] hover:bg-white">
+                    Next Sector >>
+                </button>
+            </div>
+
+            <div id="feedback" class="h-8 mt-2 flex items-center justify-center text-sm font-bold tracking-wider uppercase"></div>
+        </div>
+
+        <div id="result-screen" class="hidden race-card p-8 rounded-2xl shadow-2xl text-center animate-slide-in my-auto">
+            <h2 id="result-title" class="f1-font text-3xl mb-2 font-bold text-white italic">CHECKERED FLAG</h2>
+            <div class="w-full h-1 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 mb-8"></div>
+            
+            <div id="accuracy-display" class="f1-font text-7xl font-bold mb-2 text-white glitch-text">95.0%</div>
+            <p id="rank-text" class="f1-font text-sm mb-8 text-gray-400 font-mono">P1: MAX VERSTAPPEN</p>
+            
+            <div class="bg-black/40 p-4 rounded-xl mb-8 text-left max-h-48 overflow-y-auto border border-gray-800" id="review-list"></div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="quiz.returnToGrid()" class="f1-font border border-gray-600 active:bg-white active:text-black text-white py-4 rounded-xl font-bold transition-all uppercase text-sm">Garage</button>
+                <button id="next-round-btn" class="f1-font bg-red-600 active:bg-red-700 text-white py-4 rounded-xl font-bold transition-all shadow-lg shadow-red-900/50 uppercase text-sm">Next Sector</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // ▼▼▼ Firebase Config ▼▼▼
-        const firebaseConfig = {
-            apiKey: "AIzaSyDg2EgiI-DMzmoT20zF4VJfm1MxtmhdJQQ",
-            authDomain: "english-test-8ad4a.firebaseapp.com",
-            projectId: "english-test-8ad4a",
-            storageBucket: "english-test-8ad4a.firebasestorage.app",
-            messagingSenderId: "998730699699",
-            appId: "1:998730699699:web:8245c7259cec7dd20231c6",
-            measurementId: "G-FC2LRFVFGF",
-            databaseURL: "https://english-test-8ad4a-default-rtdb.firebaseio.com/" 
-        };
-        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+// ==========================================
+// 1. DATA CONFIGURATION
+// ==========================================
+const rawData = ``; // 単語データは空 (Firebase同期または手動追加)
 
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+// 熟語モード用データ (必要に応じて追加してください)
+const idiomData = [
+    { id: 1, japanese: "10分間休憩にしましょう", prefix: "Let's (", suffix: ")", parts: ["take", "a", "ten-minute", "break"] },
+    { id: 2, japanese: "彼はそのニュースに驚いたようだ", prefix: "He seems (", suffix: ") at the news.", parts: ["to", "have", "been", "surprised"] },
+    { id: 3, japanese: "できるだけ早く", prefix: "Please come (", suffix: ").", parts: ["as", "soon", "as", "possible"] },
+    { id: 4, japanese: "私はこの歌を聞くと必ず学生時代を思い出す", prefix: "I never hear this song (", suffix: ") of my school days.", parts: ["without", "being", "reminded"] },
+    { id: 5, japanese: "雨が降っていたにもかかわらず", prefix: "(", suffix: ") the rain, they went out.", parts: ["In", "spite", "of"] },
+    { id: 6, japanese: "彼女はプライドが高すぎてその仕事ができない", prefix: "She is (", suffix: ") to do the work.", parts: ["too", "proud"] },
+    { id: 7, japanese: "彼は始発列車に乗れるように早く起きた", prefix: "He got up early (", suffix: ") the first train.", parts: ["so", "as", "to", "catch"] },
+    { id: 8, japanese: "これは私が今まで読んだ中で最も面白い本だ", prefix: "This is (", suffix: ") I have ever read.", parts: ["the", "most", "interesting", "book"] }
+];
 
-        // DOM要素
-        const boardElement = document.getElementById('shogi-board');
-        const boardContainer = document.getElementById('board-container');
-        const turnElement = document.getElementById('turn-indicator');
-        const handSenteElement = document.getElementById('hand-sente');
-        const handGoteElement = document.getElementById('hand-gote');
+// ==========================================
+// 2. MAIN LOGIC
+// ==========================================
 
-        // ゲーム状態
-        let gameState = {
-            board: [],
-            turn: 'sente',
-            hands: { sente: [], gote: [] }
-        };
+        document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
+        document.addEventListener('touchmove', function(event) { if (event.scale !== 1) { event.preventDefault(); } }, { passive: false });
 
-        // ローカル状態
-        let selected = null; 
-        let isGoteView = false; 
+        class HybridQuiz {
+            constructor() {
+                this.mode = 'vocab'; // 'vocab' or 'idiom'
+                
+                // Vocab Props
+                this.wordsPerRound = 20; 
+                this.masterList = [];
+                this.vocabRounds = [];
+                this.currentRoundIndex = 0;
+                
+                // Idiom Props
+                this.currentIdiomParts = [];
+                this.shuffledIdiomParts = [];
+                this.userAns = [];
+                this.isLocked = false;
+                
+                // Common Props
+                this.questions = [];
+                this.currentIndex = 0;
+                this.missCount = 0;
+                this.missedWordsLog = [];
+                this.startTime = 0;
+                this.timerInterval = null;
+                this.currentStreak = 0;
+                
+                // Systems
+                this.dueMistakes = [];
+                this.allMistakes = []; 
+                this.isPitStopMode = false;
+                this.isReverseMode = false;
+                
+                this.isAutoAudio = localStorage.getItem('vocab_auto_audio') !== 'false';
+                this.synth = window.speechSynthesis;
+                this.englishVoices = [];
+                if (this.synth) { this.synth.onvoiceschanged = () => this.loadVoices(); this.loadVoices(); }
 
-        // 成りマッピング
-        const promotionMap = {
-            '歩': 'と', '香': '成香', '桂': '成桂', '銀': '成銀', '角': '馬', '飛': '龍'
-        };
-        const demotionMap = {
-            'と': '歩', '成香': '香', '成桂': '桂', '成銀': '銀', '馬': '角', '龍': '飛',
-            '歩': '歩', '香': '香', '桂': '桂', '銀': '銀', '金': '金', '角': '角', '飛': '飛', '王': '王', '玉': '玉'
-        };
+                const audioCheck = document.getElementById('audio-mode');
+                if(audioCheck) {
+                    audioCheck.checked = this.isAutoAudio;
+                    audioCheck.addEventListener('change', (e) => {
+                        this.isAutoAudio = e.target.checked;
+                        localStorage.setItem('vocab_auto_audio', this.isAutoAudio);
+                    });
+                }
 
-        // --- 1. 同期処理 (修正済み) ---
-        db.ref('game').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                // ▼▼▼ CRITICAL FIX: 配列の穴埋め処理 ▼▼▼
-                // Firebaseはnullの行を削除するため、強制的に復活させる
-                if (!data.board) data.board = [];
-                for (let i = 0; i < 9; i++) {
-                    if (!data.board[i]) {
-                        data.board[i] = new Array(9).fill(null);
+                this.parseData();
+                this.generateRounds();
+                this.initUI();
+            }
+
+            loadVoices() {
+                if(!this.synth) return;
+                const allVoices = this.synth.getVoices();
+                this.englishVoices = allVoices.filter(v => v.lang.startsWith('en'));
+            }
+
+            parseData() {
+                if(!rawData.trim()) { this.masterList = []; return; }
+                const lines = rawData.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('[source'));
+                this.masterList = [];
+                lines.forEach(line => {
+                    let sep = -1;
+                    if (line.indexOf('\t') !== -1) sep = line.indexOf('\t');
+                    else if (line.indexOf(':') !== -1) sep = line.indexOf(':');
+                    else if (line.indexOf('：') !== -1) sep = line.indexOf('：');
+                    if (sep !== -1) {
+                        this.masterList.push({ w: line.substring(0, sep).trim(), m: line.substring(sep + 1).trim() });
+                    }
+                });
+            }
+
+            generateRounds() {
+                const wordCopy = [...this.masterList]; 
+                this.vocabRounds = [];
+                let roundNum = 1;
+                let currentWordIndex = 1; 
+                while (wordCopy.length > 0) {
+                    const chunk = wordCopy.splice(0, this.wordsPerRound);
+                    if (chunk.length > 0) {
+                        this.vocabRounds.push({ id: roundNum, name: `ROUND ${roundNum} (No.${currentWordIndex} - ${currentWordIndex + chunk.length - 1})`, words: chunk });
+                        roundNum++;
+                        currentWordIndex += chunk.length;
                     }
                 }
-                // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-
-                gameState = data;
-                
-                // 持ち駒データの保護
-                if (!gameState.hands) gameState.hands = { sente: [], gote: [] };
-                if (!gameState.hands.sente) gameState.hands.sente = [];
-                if (!gameState.hands.gote) gameState.hands.gote = [];
-                
-                selected = null;
-                render();
-            } else {
-                resetGame(); // データなしなら初期化
             }
-        });
 
-        // --- 2. 描画処理 ---
-        function render() {
-            const isSenteTurn = gameState.turn === 'sente';
-            turnElement.innerText = isSenteTurn ? "▲ 先手の番" : "△ 後手の番";
-            turnElement.style.color = isSenteTurn ? "#ef5350" : "#4fc3f7";
+            initUI() {
+                const selector = document.getElementById('round-selector');
+                selector.innerHTML = '';
+                if(this.vocabRounds.length === 0) { selector.innerHTML = '<option>Load Data or Login</option>'; }
+                else {
+                    this.vocabRounds.forEach((round, index) => {
+                        const opt = document.createElement('option');
+                        opt.value = index;
+                        opt.text = round.name;
+                        selector.appendChild(opt);
+                    });
+                }
+                
+                document.getElementById('idiom-count-display').innerText = idiomData.length;
+            }
             
-            renderBoard();
-            renderHands();
-        }
-
-        function renderBoard() {
-            boardElement.innerHTML = '';
-            for (let row = 0; row < 9; row++) {
-                // 安全策: 行が存在しない場合はスキップ（修正済みなので起きないはずだが念のため）
-                if (!gameState.board[row]) continue;
-
-                for (let col = 0; col < 9; col++) {
-                    const square = document.createElement('div');
-                    square.classList.add('square');
-                    square.onclick = () => onSquareClick(row, col);
-
-                    const cell = gameState.board[row][col];
-                    
-                    if (cell) {
-                        const pieceStr = typeof cell === 'object' ? cell.piece : cell;
-                        const owner = typeof cell === 'object' ? cell.owner : 'sente'; 
-
-                        square.innerText = pieceStr;
-                        if (owner === 'gote') square.classList.add('gote-piece');
-                    }
-
-                    if (selected && selected.type === 'board' && selected.row === row && selected.col === col) {
-                        square.classList.add('selected');
-                    }
-
-                    boardElement.appendChild(square);
-                }
+            setTireStrategy(count, type) {
+                this.wordsPerRound = count;
+                this.generateRounds();
+                this.initUI();
+                document.querySelectorAll('.tire-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById(`tire-${type}`).classList.add('active');
             }
-        }
 
-        function renderHands() {
-            renderHand(handSenteElement, gameState.hands.sente, 'sente');
-            renderHand(handGoteElement, gameState.hands.gote, 'gote');
-        }
-
-        function renderHand(container, pieces, owner) {
-            container.innerHTML = '';
-            pieces.forEach((piece, index) => {
-                const div = document.createElement('div');
-                div.classList.add('hand-piece');
-                div.innerText = piece;
-                div.onclick = () => onHandClick(owner, index, piece);
+            switchMode(newMode) {
+                this.mode = newMode;
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById(`mode-${newMode}`).classList.add('active');
                 
-                if (selected && selected.type === 'hand' && selected.owner === owner && selected.index === index) {
-                    div.classList.add('selected');
-                }
-                container.appendChild(div);
-            });
-        }
-
-        // --- 3. 視点切替 ---
-        function toggleView() {
-            isGoteView = !isGoteView;
-            if (isGoteView) {
-                boardContainer.classList.add('gote-view');
-            } else {
-                boardContainer.classList.remove('gote-view');
-            }
-        }
-
-        // --- 4. 操作ロジック ---
-        function onSquareClick(row, col) {
-            // 行の安全確認
-            if (!gameState.board[row]) return;
-
-            const cell = gameState.board[row][col];
-
-            // A. 何も持っていない
-            if (!selected) {
-                if (cell && cell.owner === gameState.turn) {
-                    selected = { type: 'board', row, col };
-                    render();
-                }
-                return;
-            }
-
-            // B. 持ち駒を持っている (打つ)
-            if (selected.type === 'hand') {
-                if (!cell) {
-                    if (!gameState.board[row]) gameState.board[row] = [];
-                    gameState.board[row][col] = { piece: selected.piece, owner: gameState.turn };
-                    
-                    gameState.hands[gameState.turn].splice(selected.index, 1);
-                    endTurn();
+                if (newMode === 'vocab') {
+                    document.getElementById('vocab-settings').classList.remove('hidden');
+                    document.getElementById('vocab-tools').classList.remove('hidden');
+                    document.getElementById('idiom-settings').classList.add('hidden');
                 } else {
-                    selected = null; render();
+                    document.getElementById('vocab-settings').classList.add('hidden');
+                    document.getElementById('vocab-tools').classList.add('hidden');
+                    document.getElementById('idiom-settings').classList.remove('hidden');
                 }
-                return;
             }
 
-            // C. 盤面の駒を持っている (移動)
-            if (selected.type === 'board') {
-                if (selected.row === row && selected.col === col) { // キャンセル
-                    selected = null; render(); return;
-                }
-                if (cell && cell.owner === gameState.turn) { // 持ち替え
-                    selected = { type: 'board', row, col }; render(); return;
-                }
-
-                movePiece(selected.row, selected.col, row, col);
+            speak(text) {
+                if (!this.synth) return;
+                this.synth.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                if (this.englishVoices.length > 0) utterance.voice = this.englishVoices[0];
+                utterance.rate = 1.3; 
+                this.synth.speak(utterance);
             }
-        }
 
-        function onHandClick(owner, index, piece) {
-            if (owner !== gameState.turn) return;
-            if (selected && selected.type === 'hand' && selected.index === index) {
-                selected = null;
-            } else {
-                selected = { type: 'hand', owner, index, piece };
+            start() {
+                this.currentIndex = 0;
+                this.missCount = 0;
+                this.missedWordsLog = [];
+                this.startTime = Date.now();
+                this.startTimer();
+                
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('result-screen').classList.add('hidden');
+                document.getElementById('quiz-screen').classList.remove('hidden');
+                
+                document.getElementById('vocab-interface').classList.add('hidden');
+                document.getElementById('idiom-interface').classList.add('hidden');
+
+                if (this.mode === 'vocab') {
+                    this.startVocabMode();
+                } else {
+                    this.startIdiomMode();
+                }
             }
-            render();
-        }
 
-        function movePiece(fromRow, fromCol, toRow, toCol) {
-            // 安全確認
-            if (!gameState.board[fromRow]) return;
+            startVocabMode() {
+                if(this.vocabRounds.length === 0) { alert("Data not loaded"); this.returnToGrid(); return; }
+                this.isPitStopMode = false;
+                document.getElementById('vocab-interface').classList.remove('hidden');
+                
+                const selector = document.getElementById('round-selector');
+                this.currentRoundIndex = parseInt(selector.value);
+                const selectedRound = this.vocabRounds[this.currentRoundIndex];
+                
+                this.isReverseMode = document.getElementById('reverse-mode').checked;
+                
+                document.getElementById('circuit-name').innerText = selectedRound.name + (this.isReverseMode ? " [REV]" : "");
+                document.getElementById('question-label').innerText = this.isReverseMode ? "TRANSLATE" : "MEANING";
+
+                this.questions = selectedRound.words.map(target => {
+                    const qText = this.isReverseMode ? target.m : target.w;
+                    const aText = this.isReverseMode ? target.w : target.m;
+                    const distractors = this.getDistractors(target, this.isReverseMode);
+                    const options = [aText, ...distractors].sort(() => Math.random() - 0.5);
+                    return { w: target.w, m: target.m, qText: qText, aText: aText, o: options };
+                });
+                this.questions.sort(() => Math.random() - 0.5);
+                this.showVocabQuestion();
+            }
+
+            startIdiomMode() {
+                document.getElementById('idiom-interface').classList.remove('hidden');
+                document.getElementById('circuit-name').innerText = "IDIOM SORTING";
+                
+                this.questions = [...idiomData].sort(() => Math.random() - 0.5);
+                this.showIdiomQuestion();
+            }
             
-            const movingPiece = gameState.board[fromRow][fromCol];
-            const targetCell = gameState.board[toRow] ? gameState.board[toRow][toCol] : null;
-
-            // 1. キャプチャ
-            if (targetCell) {
-                const capturedPiece = demotionMap[targetCell.piece] || targetCell.piece;
-                gameState.hands[gameState.turn].push(capturedPiece);
+            // --- VOCAB ENGINE ---
+            getDistractors(targetWord, isReverse) {
+                const distractors = [];
+                let attempts = 0;
+                while (distractors.length < 3 && attempts < 100) {
+                    const r = this.masterList[Math.floor(Math.random() * this.masterList.length)];
+                    const candidate = isReverse ? r.w : r.m;
+                    const forbidden = isReverse ? targetWord.w : targetWord.m;
+                    if (candidate !== forbidden && !distractors.includes(candidate)) distractors.push(candidate);
+                    attempts++;
+                }
+                return distractors;
             }
 
-            // 2. 移動 & 成り判定
-            const pieceName = movingPiece.piece;
-            let finalPieceName = pieceName;
-            let canPromote = false;
+            showVocabQuestion() {
+                const q = this.questions[this.currentIndex];
+                document.getElementById('question-number').innerText = `LAP ${this.currentIndex + 1} / ${this.questions.length}`;
+                
+                const targetDisplay = document.getElementById('target-word');
+                targetDisplay.innerText = q.qText;
+                targetDisplay.className = (this.isReverseMode && q.qText.length > 8) 
+                    ? "f1-font text-3xl font-bold text-white tracking-wide break-words px-2"
+                    : "f1-font text-5xl font-bold text-white tracking-wide drop-shadow-lg break-words px-2";
 
-            if (promotionMap[pieceName]) {
-                const isSente = gameState.turn === 'sente';
-                if ((isSente && (toRow <= 2 || fromRow <= 2)) || 
-                    (!isSente && (toRow >= 6 || fromRow >= 6))) {
-                    canPromote = true;
+                document.getElementById('progress-fill').style.width = `${(this.currentIndex / this.questions.length) * 100}%`;
+                document.getElementById('feedback').innerText = '';
+                
+                const speakBtn = document.getElementById('speak-btn');
+                speakBtn.onclick = () => this.speak(q.w);
+                if (this.isAutoAudio && !this.isReverseMode) setTimeout(() => this.speak(q.w), 200);
+
+                const container = document.getElementById('options-container');
+                container.innerHTML = ''; 
+                
+                // Reveal Button Logic
+                const revealBtn = document.createElement('button');
+                revealBtn.className = 'col-span-1 md:col-span-2 w-full h-24 bg-gray-900/50 border-2 border-dashed border-gray-600 rounded-xl text-gray-400 f1-font text-lg uppercase tracking-widest active:border-yellow-500 active:text-yellow-500 transition-all flex flex-col items-center justify-center gap-1 animate-pulse';
+                revealBtn.innerHTML = `<span>VISUALIZE MEANING</span><span class="text-[10px] text-gray-500 font-mono">TAP TO UNLOCK</span>`;
+                revealBtn.onclick = () => { 
+                    container.innerHTML = '';
+                    q.o.forEach(opt => {
+                        const btn = document.createElement('button');
+                        const fontClass = this.isReverseMode ? "f1-font tracking-wider text-xl" : "text-lg";
+                        btn.className = `option-btn w-full text-left p-5 rounded-xl bg-white/5 border border-white/10 active:border-red-500 font-bold shadow-lg ${fontClass}`;
+                        btn.innerText = opt;
+                        btn.onclick = () => this.handleVocabAnswer(opt, q);
+                        container.appendChild(btn);
+                    });
+                };
+                container.appendChild(revealBtn);
+            }
+
+            handleVocabAnswer(selected, q) {
+                const feedback = document.getElementById('feedback');
+                if (selected === q.aText) {
+                    if(this.isReverseMode) this.speak(q.w);
+                    if (window.handleSRSUpdate && this.isPitStopMode) window.handleSRSUpdate(q, true);
+                    this.currentIndex++;
+                    if (this.currentIndex < this.questions.length) this.showVocabQuestion();
+                    else this.finish();
+                } else {
+                    this.missCount++;
+                    feedback.innerText = `WRONG: ${q.w} = ${q.m}`;
+                    feedback.className = "mt-4 text-center h-6 font-bold text-red-500 animate-pulse";
+                    if (!this.missedWordsLog.find(item => item.w === q.w)) this.missedWordsLog.push({ w: q.w, m: q.m });
+                    if (window.handleSRSUpdate) window.handleSRSUpdate(q, false);
+                    this.questions.push(q);
+                    const btns = document.querySelectorAll('.option-btn');
+                    btns.forEach(b => b.disabled = true);
+                    setTimeout(() => { this.currentIndex++; this.showVocabQuestion(); }, 1200);
                 }
             }
 
-            if (canPromote) {
-                if (confirm("成りますか？")) {
-                    finalPieceName = promotionMap[pieceName];
+            // --- IDIOM ENGINE ---
+            showIdiomQuestion() {
+                const data = this.questions[this.currentIndex];
+                document.getElementById('question-number').innerText = `LAP ${this.currentIndex + 1}/${this.questions.length}`;
+                document.getElementById('progress-fill').style.width = `${(this.currentIndex / this.questions.length) * 100}%`;
+                document.getElementById('feedback').innerHTML = "";
+                document.getElementById('idiom-next-btn').classList.add('hidden');
+                
+                document.getElementById('idiom-japanese').innerText = data.japanese;
+                document.getElementById('idiom-prefix').innerText = data.prefix;
+                document.getElementById('idiom-suffix').innerText = data.suffix;
+                
+                document.getElementById('answer-slot').classList.remove('correct-lane', 'wrong-lane');
+                document.getElementById('answer-slot').innerHTML = '';
+
+                this.userAns = [];
+                this.currentIdiomParts = [...data.parts];
+                this.shuffledIdiomParts = [...data.parts];
+                this.shuffle(this.shuffledIdiomParts);
+                
+                this.isLocked = false;
+                this.renderIdiomPool();
+            }
+
+            renderIdiomPool() {
+                const poolEl = document.getElementById('word-pool');
+                poolEl.innerHTML = '';
+                const remaining = this.getRemainingParts(this.shuffledIdiomParts, this.userAns);
+                
+                remaining.forEach((word) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'chip-btn chip-pool f1-font px-4 py-3 rounded-lg text-lg border border-gray-700 shadow-md active:bg-gray-700';
+                    btn.innerText = word;
+                    if(this.isLocked) btn.classList.add('locked');
+                    btn.onclick = () => { if(!this.isLocked) this.moveWordToSlot(word); };
+                    poolEl.appendChild(btn);
+                });
+            }
+
+            renderIdiomSlot() {
+                const slotEl = document.getElementById('answer-slot');
+                slotEl.innerHTML = '';
+                this.userAns.forEach((word, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'chip-btn chip-slot f1-font px-3 py-2 rounded-md text-lg';
+                    btn.innerText = word;
+                    if(this.isLocked) btn.classList.add('locked');
+                    btn.onclick = () => { if(!this.isLocked) this.moveWordToPool(idx); };
+                    slotEl.appendChild(btn);
+                });
+                this.checkIdiomWin();
+            }
+
+            moveWordToSlot(word) {
+                this.userAns.push(word);
+                this.renderIdiomPool();
+                this.renderIdiomSlot();
+            }
+
+            moveWordToPool(idx) {
+                this.userAns.splice(idx, 1);
+                this.renderIdiomPool();
+                this.renderIdiomSlot();
+            }
+
+            getRemainingParts(allParts, usedParts) {
+                const pool = [...allParts];
+                const used = [...usedParts];
+                used.forEach(u => {
+                    const i = pool.indexOf(u);
+                    if (i > -1) pool.splice(i, 1);
+                });
+                return pool;
+            }
+
+            checkIdiomWin() {
+                const correctOrder = this.questions[this.currentIndex].parts;
+                const slotEl = document.getElementById('answer-slot');
+                
+                if (this.userAns.length !== correctOrder.length) return;
+
+                const isCorrect = this.userAns.every((val, index) => val === correctOrder[index]);
+
+                if (isCorrect) {
+                    slotEl.classList.add('correct-lane');
+                    document.getElementById('feedback').innerHTML = "<span class='text-[#39ff14] text-lg'>✅ PURPLE SECTOR</span>";
+                    slotEl.querySelectorAll('.chip-btn').forEach(c => c.classList.add('chip-correct'));
+                    
+                    const nextBtn = document.getElementById('idiom-next-btn');
+                    nextBtn.classList.remove('hidden');
+                    nextBtn.onclick = () => {
+                        this.currentIndex++;
+                        if (this.currentIndex < this.questions.length) this.showIdiomQuestion();
+                        else this.finish();
+                    };
+                } else {
+                    this.missCount++;
+                    if (!this.missedWordsLog.find(item => item.w === "Idiom Order")) {
+                        this.missedWordsLog.push({ w: "Idiom Order Error", m: this.questions[this.currentIndex].japanese });
+                    }
+                    this.isLocked = true;
+                    document.getElementById('feedback').innerHTML = "<span class='text-[#e10600]'>⚠️ CRASHED! RESETTING...</span>";
+                    slotEl.classList.add('wrong-lane', 'animate-shake');
+                    
+                    setTimeout(() => {
+                        slotEl.classList.remove('animate-shake', 'wrong-lane');
+                        document.getElementById('feedback').innerHTML = "";
+                        this.userAns = [];
+                        this.isLocked = false;
+                        this.renderIdiomPool();
+                        this.renderIdiomSlot();
+                    }, 800);
                 }
             }
 
-            if (!gameState.board[toRow]) gameState.board[toRow] = [];
-            gameState.board[toRow][toCol] = { piece: finalPieceName, owner: gameState.turn };
-            gameState.board[fromRow][fromCol] = null;
+            // --- COMMON UTILS ---
+            startTimer() {
+                if (this.timerInterval) clearInterval(this.timerInterval);
+                this.timerInterval = setInterval(() => { document.getElementById('timer').innerText = ((Date.now() - this.startTime) / 1000).toFixed(2) + 's'; }, 50);
+            }
 
-            endTurn();
-        }
+            shuffle(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
 
-        function endTurn() {
-            gameState.turn = (gameState.turn === 'sente') ? 'gote' : 'sente';
-            selected = null;
-            db.ref('game').set(gameState).catch(err => alert(err));
-        }
+            finish() {
+                clearInterval(this.timerInterval);
+                document.getElementById('quiz-screen').classList.add('hidden');
+                document.getElementById('result-screen').classList.remove('hidden');
+                
+                const totalTime = (Date.now() - this.startTime) / 1000;
+                let accuracy = Math.max(0, 100 - (this.missCount * 5)); 
+                if(this.mode === 'idiom') accuracy = Math.max(0, 100 - (this.missCount * 10)); // Idiom penalty heavier
 
-        function resetGame() {
-            if(!confirm("初期配置に戻しますか？")) return;
+                const accDisplay = document.getElementById('accuracy-display');
+                accDisplay.innerText = `${accuracy.toFixed(1)}%`;
+                accDisplay.style.color = accuracy >= 90 ? "#4ade80" : "#ef4444";
+                
+                document.getElementById('rank-text').innerText = `Time: ${totalTime.toFixed(2)}s | Misses: ${this.missCount}`;
+                document.getElementById('result-title').innerText = "CHECKERED FLAG";
+                
+                const review = document.getElementById('review-list');
+                let summaryHtml = `<div class="mb-4 font-bold text-white uppercase text-sm tracking-widest border-b border-gray-700 pb-2">Lap Analysis</div>`;
+                if (this.missedWordsLog.length > 0) { summaryHtml += this.missedWordsLog.map(item => `<div class="mb-2 text-sm p-2 bg-red-900/10 border border-red-900/30 rounded"><span class="font-bold text-white block">${item.w}</span><span class="text-gray-400">${item.m}</span></div>`).join(''); } else { summaryHtml += '<p class="text-green-500 font-bold">Perfect Lap. No Issues Detected.</p>'; }
+                review.innerHTML = summaryHtml;
+                
+                const nextBtn = document.getElementById('next-round-btn');
+                if (this.mode === 'vocab' && !this.isPitStopMode && this.currentRoundIndex + 1 < this.vocabRounds.length) {
+                    nextBtn.classList.remove('hidden');
+                    nextBtn.onclick = () => { document.getElementById('round-selector').value = this.currentRoundIndex + 1; this.start(); };
+                } else { nextBtn.classList.add('hidden'); }
+                
+                if (window.fetchSRSItems) window.fetchSRSItems();
+            }
+
+            returnToGrid() {
+                document.getElementById('result-screen').classList.add('hidden');
+                document.getElementById('start-screen').classList.remove('hidden');
+                if (window.fetchSRSItems) window.fetchSRSItems();
+            }
             
-            const initBoard = [];
-            for(let i=0; i<9; i++) initBoard[i] = new Array(9).fill(null);
-
-            const placement = [
-                ['香','桂','銀','金','王','金','銀','桂','香'],
-                ['','飛','','','','','','角',''],
-                ['歩','歩','歩','歩','歩','歩','歩','歩','歩'],
-                ['','','','','','','','',''],
-                ['','','','','','','','',''],
-                ['','','','','','','','',''],
-                ['歩','歩','歩','歩','歩','歩','歩','歩','歩'],
-                ['','角','','','','','','飛',''],
-                ['香','桂','銀','金','玉','金','銀','桂','香']
-            ];
-
-            for(let r=0; r<9; r++) {
-                for(let c=0; c<9; c++) {
-                    const p = placement[r][c];
-                    if(!p) continue;
-                    let owner = (r < 3) ? 'gote' : 'sente';
-                    initBoard[r][c] = { piece: p, owner: owner };
+            // SRS / Pit Stop Logic Integration
+            updatePitStopButton(count) {
+                const text = document.getElementById('mistake-count-display');
+                const overlay = document.getElementById('pit-alert-overlay');
+                if (count > 0) {
+                    text.innerText = "CRITICAL"; text.classList.remove('text-green-500'); text.classList.add('text-red-500');
+                    overlay.classList.remove('hidden'); overlay.onclick = () => this.startPitStop();
+                } else {
+                    text.innerText = "OPTIMAL"; text.classList.add('text-green-500'); text.classList.remove('text-red-500');
+                    overlay.classList.add('hidden');
                 }
             }
-
-            db.ref('game').set({
-                board: initBoard,
-                hands: { sente: [], gote: [] },
-                turn: 'sente'
-            });
+            
+            startPitStop() {
+                if (!this.dueMistakes || this.dueMistakes.length === 0) return;
+                this.isPitStopMode = true; 
+                this.switchMode('vocab'); // Pit stops are always Vocab SRS
+                this.questions = this.dueMistakes.map(item => {
+                    const targetWord = { w: item.word, m: item.meaning };
+                    const distractors = this.getDistractors(targetWord, false);
+                    const options = [targetWord.m, ...distractors].sort(() => Math.random() - 0.5);
+                    return { w: targetWord.w, m: targetWord.m, qText: targetWord.w, aText: targetWord.m, o: options, docId: item.id, interval: item.interval || 0, repetitions: item.repetitions || 0, easeFactor: item.easeFactor || 2.5 };
+                });
+                this.questions.sort(() => Math.random() - 0.5);
+                this.currentIndex = 0; this.missCount = 0; this.missedWordsLog = [];
+                document.getElementById('circuit-name').innerText = "SRS PIT STOP";
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('quiz-screen').classList.remove('hidden');
+                this.startTime = Date.now();
+                this.startTimer();
+                this.showVocabQuestion();
+            }
+            
+            openTelemetry() {
+                // (Existing Telemetry Logic would go here - preserved from original but hidden if not needed)
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('telemetry-screen').classList.remove('hidden');
+            }
+            closeOverlay(id) {
+                document.getElementById(id).classList.add('hidden');
+                document.getElementById('start-screen').classList.remove('hidden');
+            }
         }
+
+        window.quiz = new HybridQuiz();
+    </script>
+    
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import { getFirestore, collection, addDoc, query, where, getDocs, doc, setDoc, updateDoc, Timestamp, orderBy, limit, runTransaction, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDg2EgiI-DMzmoT20zF4VJfm1MxtmhdJQQ",
+        authDomain: "english-test-8ad4a.firebaseapp.com",
+        projectId: "english-test-8ad4a",
+        storageBucket: "english-test-8ad4a.firebasestorage.app",
+        messagingSenderId: "998730699699",
+        appId: "1:998730699699:web:8245c7259cec7dd20231c6",
+        measurementId: "G-FC2LRFVFGF"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      const gateScreen = document.getElementById('gate-screen');
+      const startScreen = document.getElementById('start-screen');
+      const gateLoginBtn = document.getElementById('gate-login-btn');
+      const logoutBtn = document.getElementById('logout-btn');
+      const userNameSpan = document.getElementById('user-name');
+      const loginStatus = document.getElementById('login-status');
+
+      window.currentUser = null;
+
+      gateLoginBtn.addEventListener('click', async () => {
+        loginStatus.innerText = "Connecting to Paddock...";
+        const provider = new GoogleAuthProvider();
+        try { await signInWithPopup(auth, provider); } 
+        catch (error) { console.error(error); loginStatus.innerText = "Access Denied."; }
+      });
+
+      logoutBtn.addEventListener('click', () => { 
+        if(window.currentUser) {
+            localStorage.removeItem(`srs_data_${window.currentUser.uid}`);
+            localStorage.removeItem(`srs_time_${window.currentUser.uid}`);
+        }
+        signOut(auth); 
+      });
+
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            window.currentUser = user;
+            gateScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            userNameSpan.textContent = user.displayName || "TEST DRIVER";
+            window.fetchSRSItems();
+        } else {
+            window.currentUser = null;
+            gateScreen.classList.remove('hidden');
+            startScreen.classList.add('hidden');
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            loginStatus.innerText = "Waiting for connection...";
+        }
+      });
+
+      window.fetchSRSItems = async () => {
+        if (!window.currentUser) return;
+        const CACHE_KEY = `srs_data_${window.currentUser.uid}`;
+        const TIME_KEY = `srs_time_${window.currentUser.uid}`;
+        const CACHE_DURATION = 12 * 60 * 60 * 1000; 
+
+        const now = Date.now();
+        const lastFetch = parseInt(localStorage.getItem(TIME_KEY) || '0');
+        let allItems = [];
+
+        if (now - lastFetch < CACHE_DURATION && localStorage.getItem(CACHE_KEY)) {
+            const rawData = JSON.parse(localStorage.getItem(CACHE_KEY));
+            allItems = rawData.map(item => ({ ...item, nextReview: { toDate: () => new Date(item.nextReviewSeconds * 1000) }, seconds: item.nextReviewSeconds }));
+        } else {
+            try {
+                const mistakesRef = collection(db, "users", window.currentUser.uid, "mistakes");
+                const snapshot = await getDocs(mistakesRef);
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    allItems.push({ id: doc.id, ...d, nextReviewSeconds: d.nextReview.seconds });
+                });
+                localStorage.setItem(CACHE_KEY, JSON.stringify(allItems));
+                localStorage.setItem(TIME_KEY, now.toString());
+                allItems = allItems.map(item => ({ ...item, nextReview: { toDate: () => new Date(item.nextReviewSeconds * 1000) } }));
+            } catch (e) { console.error("Telemetry Error:", e); }
+        }
+
+        const dueItems = [];
+        const nowTs = Date.now() / 1000;
+        allItems.forEach(item => { if (item.nextReviewSeconds <= nowTs) dueItems.push(item); });
+
+        window.quiz.allMistakes = allItems;
+        window.quiz.dueMistakes = dueItems;
+        window.quiz.updatePitStopButton(dueItems.length);
+      };
+
+      window.handleSRSUpdate = async (questionObj, isCorrect) => {
+        if (!window.currentUser) return;
+        const mistakesRef = collection(db, "users", window.currentUser.uid, "mistakes");
+        const now = new Date();
+        const safeWordId = btoa(encodeURIComponent(questionObj.w)).replace(/\//g, '_').replace(/\+/g, '-');
+        const targetRef = questionObj.docId ? doc(mistakesRef, questionObj.docId) : doc(mistakesRef, safeWordId);
+        
+        const currentParams = { interval: questionObj.interval || 0, repetitions: questionObj.repetitions || 0, easeFactor: questionObj.easeFactor || 2.5 };
+        let nextInterval, nextRepetitions, nextEaseFactor;
+
+        if (!isCorrect) {
+            nextRepetitions = 0; nextInterval = 1; nextEaseFactor = Math.max(1.3, currentParams.easeFactor - 0.2);
+        } else {
+            nextRepetitions = currentParams.repetitions + 1;
+            if (nextRepetitions === 1) nextInterval = 1; else if (nextRepetitions === 2) nextInterval = 6; else nextInterval = Math.round(currentParams.interval * currentParams.easeFactor);
+            nextEaseFactor = currentParams.easeFactor + 0.1;
+        }
+
+        const nextDate = new Date(); nextDate.setDate(now.getDate() + nextInterval);
+
+        await setDoc(targetRef, { word: questionObj.w, meaning: questionObj.meaning || questionObj.m, nextReview: Timestamp.fromDate(nextDate), interval: nextInterval, repetitions: nextRepetitions, easeFactor: nextEaseFactor, lastReviewed: Timestamp.fromDate(now) }, { merge: true });
+      };
     </script>
 </body>
 </html>
