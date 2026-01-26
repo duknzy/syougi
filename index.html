@@ -2838,6 +2838,7 @@ const idiomData = [
                 } else { nextBtn.classList.add('hidden'); }
                 
                 if (window.fetchSRSItems) window.fetchSRSItems();
+                if (window.incrementDailyLaps) window.incrementDailyLaps(); // ★ Daily Lap更新
             }
 
             returnToGrid() {
@@ -2967,6 +2968,43 @@ const idiomData = [
         signOut(auth); 
       });
 
+      // --- Daily Lap Counter (Restored) ---
+      const statsRef = doc(db, "stats", "daily_global");
+      
+      onSnapshot(statsRef, (doc) => {
+          if (doc.exists()) {
+              const data = doc.data();
+              // Check if date is today (JST)
+              const todayStr = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }).split(' ')[0];
+              if (data.date === todayStr) {
+                  document.getElementById('daily-laps-display').innerText = data.count;
+              } else {
+                  document.getElementById('daily-laps-display').innerText = 0;
+              }
+          }
+      });
+
+      window.incrementDailyLaps = async () => {
+          const todayStr = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }).split(' ')[0];
+          try {
+              await runTransaction(db, async (transaction) => {
+                  const sfDoc = await transaction.get(statsRef);
+                  if (!sfDoc.exists()) {
+                      transaction.set(statsRef, { date: todayStr, count: 1 });
+                  } else {
+                      const data = sfDoc.data();
+                      if (data.date !== todayStr) {
+                          transaction.update(statsRef, { date: todayStr, count: 1 });
+                      } else {
+                          transaction.update(statsRef, { count: data.count + 1 });
+                      }
+                  }
+              });
+          } catch (e) {
+              console.error("Stats Error:", e);
+          }
+      };
+
       onAuthStateChanged(auth, async (user) => {
         if (user) {
             window.currentUser = user;
@@ -3009,6 +3047,13 @@ const idiomData = [
                 localStorage.setItem(TIME_KEY, now.toString());
                 allItems = allItems.map(item => ({ ...item, nextReview: { toDate: () => new Date(item.nextReviewSeconds * 1000) } }));
             } catch (e) { console.error("Telemetry Error:", e); }
+        }
+
+        // rawDataが空の場合、サーバーデータでマスターリストを埋める
+        if (window.quiz.masterList.length === 0 && allItems.length > 0) {
+            window.quiz.masterList = allItems.map(i => ({ w: i.word || i.w, m: i.meaning || i.m }));
+            window.quiz.generateRounds();
+            window.quiz.initUI();
         }
 
         const dueItems = [];
