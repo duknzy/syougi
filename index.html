@@ -347,7 +347,7 @@
 
     <script>
 // ==========================================
-// 1. DATA CONFIGURATION
+// 1. DATA CONFIGURATION (Full Loaded)
 // ==========================================
 const rawData = `
 follow: ～の後に続く、～に従う
@@ -2377,7 +2377,7 @@ abruptly: 不意に
 conversely: 逆に
 predominantly: 主に
 lest: ～しないように
-`; // ここに単語データを入れれば検索も機能する
+`;
 
 // 熟語モード用データ
 const idiomData = [
@@ -2400,21 +2400,15 @@ const idiomData = [
 
         class HybridQuiz {
             constructor() {
-                this.mode = 'vocab'; // 'vocab' or 'idiom'
-                
-                // Vocab Props
+                this.mode = 'vocab'; 
                 this.wordsPerRound = 20; 
                 this.masterList = [];
                 this.vocabRounds = [];
                 this.currentRoundIndex = 0;
-                
-                // Idiom Props
                 this.currentIdiomParts = [];
                 this.shuffledIdiomParts = [];
                 this.userAns = [];
                 this.isLocked = false;
-                
-                // Common Props
                 this.questions = [];
                 this.currentIndex = 0;
                 this.missCount = 0;
@@ -2422,13 +2416,10 @@ const idiomData = [
                 this.startTime = 0;
                 this.timerInterval = null;
                 this.currentStreak = 0;
-                
-                // Systems
                 this.dueMistakes = [];
                 this.allMistakes = []; 
                 this.isPitStopMode = false;
                 this.isReverseMode = false;
-                
                 this.isAutoAudio = localStorage.getItem('vocab_auto_audio') !== 'false';
                 this.synth = window.speechSynthesis;
                 this.englishVoices = [];
@@ -2446,7 +2437,7 @@ const idiomData = [
                 this.parseData();
                 this.generateRounds();
                 this.initUI();
-                this.initSearch(); // 検索機能を再初期化
+                this.initSearch(); 
             }
 
             loadVoices() {
@@ -2500,18 +2491,15 @@ const idiomData = [
                 document.getElementById('idiom-count-display').innerText = idiomData.length;
             }
 
-            // ★ 単語検索機能 (Garage Tools)
             initSearch() {
                 const input = document.getElementById('search-input');
                 const results = document.getElementById('search-results');
                 input.addEventListener('input', (e) => {
                     const q = e.target.value.toLowerCase().trim();
                     if (!q) { results.classList.add('hidden'); return; }
-                    
                     const hits = this.masterList.map((item, index) => ({ ...item, i: index + 1 }))
                         .filter(item => item.w.toLowerCase().includes(q) || item.m.toLowerCase().includes(q))
                         .slice(0, 50);
-
                     if (hits.length > 0) {
                         results.classList.remove('hidden');
                         results.innerHTML = hits.map(h => `
@@ -2527,7 +2515,6 @@ const idiomData = [
                 document.addEventListener('click', (e) => { if (!input.contains(e.target) && !results.contains(e.target)) results.classList.add('hidden'); });
             }
 
-            // ★ カスタム範囲作成機能
             createCustomRound() {
                 const s = parseInt(document.getElementById('custom-start').value) - 1;
                 const e = parseInt(document.getElementById('custom-end').value);
@@ -2625,10 +2612,11 @@ const idiomData = [
                 this.showIdiomQuestion();
             }
             
-            // --- VOCAB ENGINE ---
             getDistractors(targetWord, isReverse) {
                 const distractors = [];
                 let attempts = 0;
+                if (this.masterList.length < 4) return ["Option A", "Option B", "Option C"]; 
+
                 while (distractors.length < 3 && attempts < 100) {
                     const r = this.masterList[Math.floor(Math.random() * this.masterList.length)];
                     const candidate = isReverse ? r.w : r.m;
@@ -2659,7 +2647,6 @@ const idiomData = [
                 const container = document.getElementById('options-container');
                 container.innerHTML = ''; 
                 
-                // Reveal Button Logic
                 const revealBtn = document.createElement('button');
                 revealBtn.className = 'col-span-1 md:col-span-2 w-full h-24 bg-gray-900/50 border-2 border-dashed border-gray-600 rounded-xl text-gray-400 f1-font text-lg uppercase tracking-widest active:border-yellow-500 active:text-yellow-500 transition-all flex flex-col items-center justify-center gap-1 animate-pulse';
                 revealBtn.innerHTML = `<span>VISUALIZE MEANING</span><span class="text-[10px] text-gray-500 font-mono">TAP TO UNLOCK</span>`;
@@ -2776,9 +2763,7 @@ const idiomData = [
             checkIdiomWin() {
                 const correctOrder = this.questions[this.currentIndex].parts;
                 const slotEl = document.getElementById('answer-slot');
-                
                 if (this.userAns.length !== correctOrder.length) return;
-
                 const isCorrect = this.userAns.every((val, index) => val === correctOrder[index]);
 
                 if (isCorrect) {
@@ -2801,7 +2786,6 @@ const idiomData = [
                     this.isLocked = true;
                     document.getElementById('feedback').innerHTML = "<span class='text-[#e10600]'>⚠️ CRASHED! RESETTING...</span>";
                     slotEl.classList.add('wrong-lane', 'animate-shake');
-                    
                     setTimeout(() => {
                         slotEl.classList.remove('animate-shake', 'wrong-lane');
                         document.getElementById('feedback').innerHTML = "";
@@ -2833,7 +2817,7 @@ const idiomData = [
                 
                 const totalTime = (Date.now() - this.startTime) / 1000;
                 let accuracy = Math.max(0, 100 - (this.missCount * 5)); 
-                if(this.mode === 'idiom') accuracy = Math.max(0, 100 - (this.missCount * 10)); // Idiom penalty heavier
+                if(this.mode === 'idiom') accuracy = Math.max(0, 100 - (this.missCount * 10));
 
                 const accDisplay = document.getElementById('accuracy-display');
                 accDisplay.innerText = `${accuracy.toFixed(1)}%`;
@@ -2862,7 +2846,6 @@ const idiomData = [
                 if (window.fetchSRSItems) window.fetchSRSItems();
             }
             
-            // SRS / Pit Stop Logic Integration
             updatePitStopButton(count) {
                 const text = document.getElementById('mistake-count-display');
                 const overlay = document.getElementById('pit-alert-overlay');
@@ -2878,13 +2861,18 @@ const idiomData = [
             startPitStop() {
                 if (!this.dueMistakes || this.dueMistakes.length === 0) return;
                 this.isPitStopMode = true; 
-                this.switchMode('vocab'); // Pit stops are always Vocab SRS
+                this.switchMode('vocab'); 
+                
                 this.questions = this.dueMistakes.map(item => {
-                    const targetWord = { w: item.word, m: item.meaning };
+                    const word = item.word || item.w;
+                    const meaning = item.meaning || item.m;
+                    const targetWord = { w: word, m: meaning };
+                    
                     const distractors = this.getDistractors(targetWord, false);
                     const options = [targetWord.m, ...distractors].sort(() => Math.random() - 0.5);
                     return { w: targetWord.w, m: targetWord.m, qText: targetWord.w, aText: targetWord.m, o: options, docId: item.id, interval: item.interval || 0, repetitions: item.repetitions || 0, easeFactor: item.easeFactor || 2.5 };
                 });
+                
                 this.questions.sort(() => Math.random() - 0.5);
                 this.currentIndex = 0; this.missCount = 0; this.missedWordsLog = [];
                 document.getElementById('circuit-name').innerText = "SRS PIT STOP";
@@ -2896,9 +2884,31 @@ const idiomData = [
             }
             
             openTelemetry() {
-                // (Existing Telemetry Logic would go here - preserved from original but hidden if not needed)
                 document.getElementById('start-screen').classList.add('hidden');
                 document.getElementById('telemetry-screen').classList.remove('hidden');
+                const mistakes = this.allMistakes || [];
+                const worstWords = [...mistakes].sort((a, b) => (a.easeFactor || 2.5) - (b.easeFactor || 2.5)).slice(0, 20);
+                const listContainer = document.getElementById('worst-words-list');
+                if (worstWords.length === 0) listContainer.innerHTML = `<div class="text-gray-500 text-xs italic">No degradation.</div>`;
+                else {
+                    listContainer.innerHTML = worstWords.map(item => `
+                        <div class="flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border-l-2 border-red-500 mb-1">
+                            <span class="font-bold text-gray-200 text-xs f1-font">${item.word || item.w}</span>
+                            <span class="text-[10px] text-gray-500 font-mono">EF:${(item.easeFactor||2.5).toFixed(2)}</span>
+                        </div>`).join('');
+                }
+                const ctx = document.getElementById('weaknessRadarChart').getContext('2d');
+                if (this.telemetryChart) this.telemetryChart.destroy();
+                const buckets = [0, 0, 0, 0, 0];
+                mistakes.forEach(m => {
+                    const int = m.interval || 0;
+                    if (int <= 1) buckets[0]++; else if (int <= 6) buckets[1]++; else if (int <= 14) buckets[2]++; else if (int <= 30) buckets[3]++; else buckets[4]++;
+                });
+                this.telemetryChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: ['1d', '2-6d', '2w', '1mo', 'Master'], datasets: [{ data: buckets, backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6'], borderColor: '#333', borderWidth: 1 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } } }
+                });
             }
             closeOverlay(id) {
                 document.getElementById(id).classList.add('hidden');
