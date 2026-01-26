@@ -2878,6 +2878,11 @@ const idiomData = [
                 document.getElementById('circuit-name').innerText = "SRS PIT STOP";
                 document.getElementById('start-screen').classList.add('hidden');
                 document.getElementById('quiz-screen').classList.remove('hidden');
+                
+                // ★ 修正箇所：強制的にVocab Interfaceを表示する
+                document.getElementById('vocab-interface').classList.remove('hidden');
+                document.getElementById('idiom-interface').classList.add('hidden');
+
                 this.startTime = Date.now();
                 this.startTimer();
                 this.showVocabQuestion();
