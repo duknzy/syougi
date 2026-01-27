@@ -8,6 +8,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RB Hybrid GP">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5776/5776097.png">
+    
+    <link rel="manifest" href="manifest.json">
 
     <title>RB Hybrid Learning System</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -3140,6 +3142,16 @@ const idiomData = [
         }
       };
 
+    </script>
+    <script>
+      // ★ PWA化の要：Service Workerの登録
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js')
+            .then(reg => console.log('Service Worker Registered!', reg.scope))
+            .catch(err => console.log('Service Worker Failed:', err));
+        });
+      }
     </script>
 </body>
 </html>
