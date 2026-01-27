@@ -1,8 +1,9 @@
-const CACHE_NAME = 'rb-hybrid-v1';
+const CACHE_NAME = 'rb-hybrid-v2'; // ← バージョンを v2 に変更（これで古いキャッシュを捨てさせる）
 const urlsToCache = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icon.jpg' // ← これを追加！忘れずにな
 ];
 
 self.addEventListener('install', (event) => {
