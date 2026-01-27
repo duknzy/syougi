@@ -6,12 +6,10 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="RB Hybrid GP">
+    <meta name="apple-mobile-web-app-title" content="RB Hybrid">
     <link rel="apple-touch-icon" href="./icon.jpg">
     
-    <link rel="manifest" href="manifest.json">
-
-    <title>RB Hybrid Learning System</title>
+    <title>RB Hybrid GP - 2026 Final Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -75,6 +73,20 @@
             border-top: 4px solid var(--f1-red);
         }
 
+        /* --- SIMPLE PASS BOX --- */
+        .simple-pass-box {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #444;
+            border-left: 4px solid var(--neon-green);
+            border-radius: 4px;
+            padding: 1.2rem;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.1);
+        }
+
         /* --- UI COMPONENTS --- */
         .option-btn { 
             transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
@@ -132,7 +144,6 @@
             background: rgba(225, 6, 0, 0.1);
         }
 
-        /* Mode Switcher */
         .mode-btn { transition: all 0.2s; opacity: 0.5; border-bottom: 2px solid transparent; }
         .mode-btn.active { opacity: 1; border-bottom-color: var(--f1-red); color: white; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
 
@@ -144,12 +155,6 @@
         .tire-soft.active { border-color: #ef4444; color: #ef4444; } 
         .tire-medium.active { border-color: #eab308; color: #eab308; } 
         .tire-hard.active { border-color: #f8fafc; color: #f8fafc; } 
-        
-        .pass-card {
-            background: linear-gradient(135deg, #ffd700, #ff8c00);
-            color: #000;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-        }
 
         input, select { font-size: 16px !important; }
 
@@ -344,20 +349,21 @@
             <div id="accuracy-display" class="f1-font text-7xl font-bold mb-2 text-white glitch-text">95.0%</div>
             <p id="rank-text" class="f1-font text-sm mb-8 text-gray-400 font-mono">P1: MAX VERSTAPPEN</p>
             
-            <div id="pass-issue-area" class="hidden mb-8 p-6 rounded-lg pass-card transform transition-all hover:scale-105 cursor-pointer active:scale-95">
-                <h3 class="font-black text-2xl mb-1 text-black">PASS GRANTED!</h3>
-                <p class="text-sm mb-3 text-black opacity-80">SUPER LICENSE ISSUED</p>
-                <button id="copy-pass-btn" class="bg-black text-white text-xs px-6 py-2 rounded-full font-bold hover:scale-105 transition-transform border border-white/20">
-                    COPY LICENSE ID
-                </button>
+            <div id="pass-issue-area" class="hidden mb-8 transform transition-all hover:scale-105 cursor-pointer active:scale-95">
+                <div class="simple-pass-box">
+                    <div class="text-left">
+                        <div class="text-[10px] text-gray-400 uppercase font-bold mb-1">SUPER LICENSE</div>
+                        <div id="license-id-display" class="f1-font text-2xl text-[#39ff14] font-bold tracking-widest">perfect</div>
+                    </div>
+                    <button id="copy-pass-btn" class="bg-gray-800 text-white text-[10px] px-6 py-3 rounded border border-gray-600 uppercase font-bold active:bg-white active:text-black">
+                        TAP TO COPY
+                    </button>
+                </div>
             </div>
 
-            <div id="fail-message" class="hidden mb-8 p-4 border border-red-500 bg-red-900/20 text-red-500 font-bold">
-                LICENSE DENIED: Accuracy below 90%
-            </div>
-
-            <div class="bg-black/40 p-4 rounded-xl mb-8 text-left max-h-48 overflow-y-auto border border-gray-800" id="review-list"></div>
+            <div id="fail-message" class="hidden mb-6 p-4 border border-red-500 bg-red-900/20 text-red-500 font-bold text-xs uppercase tracking-widest">Session Stopped: Accuracy Too Low</div>
             
+            <div class="bg-black/40 p-4 rounded-xl mb-8 text-left max-h-48 overflow-y-auto border border-gray-800" id="review-list"></div>
             <div class="grid grid-cols-2 gap-4">
                 <button onclick="quiz.returnToGrid()" class="f1-font border border-gray-600 active:bg-white active:text-black text-white py-4 rounded-xl font-bold transition-all uppercase text-sm">Garage</button>
                 <button id="next-round-btn" class="f1-font bg-red-600 active:bg-red-700 text-white py-4 rounded-xl font-bold transition-all shadow-lg shadow-red-900/50 uppercase text-sm">Next Sector</button>
@@ -2442,6 +2448,8 @@ const idiomData = [
                 this.isPitStopMode = false;
                 this.isReverseMode = false;
                 this.isAutoAudio = localStorage.getItem('vocab_auto_audio') !== 'false';
+                this.generatedLicenseId = "perfect"; 
+
                 this.synth = window.speechSynthesis;
                 this.englishVoices = [];
                 if (this.synth) { this.synth.onvoiceschanged = () => this.loadVoices(); this.loadVoices(); }
@@ -2692,6 +2700,7 @@ const idiomData = [
                 const isCorrect = (selected === q.aText);
                 const streakDisp = document.getElementById('streak-display');
                 
+                // ★ CRITICAL FIX: Use 'q' not 'questionObj'
                 if (window.handleSRSUpdate) window.handleSRSUpdate(q, isCorrect);
 
                 if (isCorrect) {
@@ -2870,8 +2879,10 @@ const idiomData = [
                 document.getElementById('result-screen').classList.remove('hidden');
                 
                 const totalTime = (Date.now() - this.startTime) / 1000;
-                let accuracy = Math.max(0, 100 - (this.missCount * 5)); 
-                if(this.mode === 'idiom') accuracy = Math.max(0, 100 - (this.missCount * 10));
+                
+                // ★ FIXED ACCURACY FORMULA
+                const totalQs = this.questions.length;
+                let accuracy = (totalQs > 0) ? Math.max(0, ((totalQs - this.missCount) / totalQs) * 100) : 0;
 
                 const accDisplay = document.getElementById('accuracy-display');
                 accDisplay.innerText = `${accuracy.toFixed(1)}%`;
@@ -2883,15 +2894,14 @@ const idiomData = [
                 const failMsg = document.getElementById('fail-message');
                 const passBtn = document.getElementById('copy-pass-btn');
 
-                // ★ AUTO-COPY LOGIC HERE
+                // ★ AUTO-COPY LOGIC
                 if (accuracy >= 90) {
                     accDisplay.style.color = "#4ade80"; 
                     passArea.classList.remove('hidden');
                     failMsg.classList.add('hidden');
                     
-                    const licenseId = `LICENSE-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+                    const licenseId = `perfect`;
                     
-                    // Auto Copy Attempt
                     navigator.clipboard.writeText(licenseId).then(() => {
                         passBtn.innerText = "AUTO-COPIED!";
                         passBtn.classList.remove("bg-black", "text-white");
@@ -2906,7 +2916,6 @@ const idiomData = [
                         passBtn.innerText = "COPY LICENSE ID"; 
                     });
 
-                    // Manual Fallback
                     passBtn.onclick = () => this.copyToClipboard(licenseId, passBtn);
 
                 } else {
@@ -2931,10 +2940,8 @@ const idiomData = [
 
                 if (this.mode === 'vocab' && !this.isPitStopMode && window.recordLapTime && window.currentUser) {
                     const roundName = this.vocabRounds[this.currentRoundIndex] ? this.vocabRounds[this.currentRoundIndex].name : "Custom";
-                    const totalQs = this.questions.length;
-                    const correct = totalQs - this.missCount;
+                    const correct = Math.max(0, totalQs - this.missCount);
                     const scoreStr = `${correct}/${totalQs}`;
-                    
                     window.recordLapTime(accuracy, totalTime, roundName, scoreStr, this.maxStreak);
                 }
             }
@@ -3195,9 +3202,15 @@ const idiomData = [
 
         const nextDate = new Date(); nextDate.setDate(now.getDate() + nextInterval);
 
+        // Optimistic Update
+        const CACHE_KEY = `srs_data_${window.currentUser.uid}`;
+        let cachedData = JSON.parse(localStorage.getItem(CACHE_KEY) || '[]');
+        const targetIndex = cachedData.findIndex(i => i.word === questionObj.w);
+        const newItemData = { id: questionObj.docId || safeWordId, word: questionObj.w, meaning: questionObj.meaning || questionObj.m, nextReviewSeconds: Math.floor(nextDate.getTime() / 1000), interval: nextInterval, repetitions: nextRepetitions, easeFactor: nextEaseFactor };
+        if (targetIndex > -1) cachedData[targetIndex] = { ...cachedData[targetIndex], ...newItemData }; else cachedData.push(newItemData);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cachedData));
+
         await setDoc(targetRef, { word: questionObj.w, meaning: questionObj.meaning || questionObj.m, nextReview: Timestamp.fromDate(nextDate), interval: nextInterval, repetitions: nextRepetitions, easeFactor: nextEaseFactor, lastReviewed: Timestamp.fromDate(now) }, { merge: true });
-        
-        // Cache Update logic removed for brevity as requested by 'rawdata empty' focus, but cloud sync remains.
       };
 
       window.recordLapTime = async (acc, time, round, score, streak) => {
