@@ -144,6 +144,12 @@
         .tire-soft.active { border-color: #ef4444; color: #ef4444; } 
         .tire-medium.active { border-color: #eab308; color: #eab308; } 
         .tire-hard.active { border-color: #f8fafc; color: #f8fafc; } 
+        
+        .pass-card {
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: #000;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
 
         input, select { font-size: 16px !important; }
 
@@ -338,6 +344,18 @@
             <div id="accuracy-display" class="f1-font text-7xl font-bold mb-2 text-white glitch-text">95.0%</div>
             <p id="rank-text" class="f1-font text-sm mb-8 text-gray-400 font-mono">P1: MAX VERSTAPPEN</p>
             
+            <div id="pass-issue-area" class="hidden mb-8 p-6 rounded-lg pass-card transform transition-all hover:scale-105 cursor-pointer active:scale-95">
+                <h3 class="font-black text-2xl mb-1 text-black">PASS GRANTED!</h3>
+                <p class="text-sm mb-3 text-black opacity-80">SUPER LICENSE ISSUED</p>
+                <button id="copy-pass-btn" class="bg-black text-white text-xs px-6 py-2 rounded-full font-bold hover:scale-105 transition-transform border border-white/20">
+                    COPY LICENSE ID
+                </button>
+            </div>
+
+            <div id="fail-message" class="hidden mb-8 p-4 border border-red-500 bg-red-900/20 text-red-500 font-bold">
+                LICENSE DENIED: Accuracy below 90%
+            </div>
+
             <div class="bg-black/40 p-4 rounded-xl mb-8 text-left max-h-48 overflow-y-auto border border-gray-800" id="review-list"></div>
             
             <div class="grid grid-cols-2 gap-4">
@@ -2418,7 +2436,7 @@ const idiomData = [
                 this.startTime = 0;
                 this.timerInterval = null;
                 this.currentStreak = 0;
-                this.maxStreak = 0; // Added for Leaderboard
+                this.maxStreak = 0; 
                 this.dueMistakes = [];
                 this.allMistakes = []; 
                 this.isPitStopMode = false;
@@ -2506,7 +2524,7 @@ const idiomData = [
                     if (hits.length > 0) {
                         results.classList.remove('hidden');
                         results.innerHTML = hits.map(h => `
-                            <div onclick="quiz.speak('${h.w.replace(/'/g, "\\'")}')" class="p-3 border-b border-gray-800 active:bg-gray-800 cursor-pointer flex justify-between items-center group">
+                            <div onclick="quiz.speak('${h.w.replace(/'/g, "\\'")}')" class="p-3 border-b border-gray-800 active:bg-gray-800 cursor-pointer flex justify-between items-center group transition-colors">
                                 <div class="text-left"><div class="flex items-baseline gap-2"><span class="text-[10px] text-yellow-500 font-mono opacity-70">No.${h.i}</span><span class="text-red-400 font-bold text-xs f1-font">${h.w}</span></div><span class="text-gray-400 text-[10px] pl-1">${h.m}</span></div>
                                 <button class="text-[8px] bg-gray-700 text-white px-2 py-1 rounded-full uppercase">Listen</button>
                             </div>`).join('');
@@ -2829,6 +2847,23 @@ const idiomData = [
                 }
             }
 
+            // ★ HELPER FOR PASS COPY
+            copyToClipboard(text, btnElement) {
+                navigator.clipboard.writeText(text).then(() => {
+                    btnElement.innerText = "AUTO-COPIED!";
+                    btnElement.classList.remove("bg-black", "text-white");
+                    btnElement.classList.add("bg-green-500", "text-black", "border", "border-green-400");
+                    setTimeout(() => {
+                        btnElement.innerText = "COPY LICENSE ID";
+                        btnElement.classList.add("bg-black", "text-white");
+                        btnElement.classList.remove("bg-green-500", "text-black", "border", "border-green-400");
+                    }, 3000);
+                }).catch(err => {
+                    console.log("Auto-copy blocked:", err);
+                    btnElement.innerText = "COPY LICENSE ID";
+                });
+            }
+
             finish() {
                 clearInterval(this.timerInterval);
                 document.getElementById('quiz-screen').classList.add('hidden');
@@ -2840,10 +2875,45 @@ const idiomData = [
 
                 const accDisplay = document.getElementById('accuracy-display');
                 accDisplay.innerText = `${accuracy.toFixed(1)}%`;
-                accDisplay.style.color = accuracy >= 90 ? "#4ade80" : "#ef4444";
                 
                 document.getElementById('rank-text').innerText = `Time: ${totalTime.toFixed(2)}s | Misses: ${this.missCount}`;
                 document.getElementById('result-title').innerText = "CHECKERED FLAG";
+                
+                const passArea = document.getElementById('pass-issue-area');
+                const failMsg = document.getElementById('fail-message');
+                const passBtn = document.getElementById('copy-pass-btn');
+
+                // ★ AUTO-COPY LOGIC HERE
+                if (accuracy >= 90) {
+                    accDisplay.style.color = "#4ade80"; 
+                    passArea.classList.remove('hidden');
+                    failMsg.classList.add('hidden');
+                    
+                    const licenseId = `LICENSE-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+                    
+                    // Auto Copy Attempt
+                    navigator.clipboard.writeText(licenseId).then(() => {
+                        passBtn.innerText = "AUTO-COPIED!";
+                        passBtn.classList.remove("bg-black", "text-white");
+                        passBtn.classList.add("bg-green-500", "text-black", "border", "border-green-400");
+                        setTimeout(() => {
+                            passBtn.innerText = "COPY LICENSE ID";
+                            passBtn.classList.add("bg-black", "text-white");
+                            passBtn.classList.remove("bg-green-500", "text-black", "border", "border-green-400");
+                        }, 3000);
+                    }).catch(err => {
+                        console.log("Auto-copy blocked:", err);
+                        passBtn.innerText = "COPY LICENSE ID"; 
+                    });
+
+                    // Manual Fallback
+                    passBtn.onclick = () => this.copyToClipboard(licenseId, passBtn);
+
+                } else {
+                    accDisplay.style.color = "#ef4444"; 
+                    passArea.classList.add('hidden');
+                    failMsg.classList.remove('hidden');
+                }
                 
                 const review = document.getElementById('review-list');
                 let summaryHtml = `<div class="mb-4 font-bold text-white uppercase text-sm tracking-widest border-b border-gray-700 pb-2">Lap Analysis</div>`;
@@ -2856,11 +2926,9 @@ const idiomData = [
                     nextBtn.onclick = () => { document.getElementById('round-selector').value = this.currentRoundIndex + 1; this.start(); };
                 } else { nextBtn.classList.add('hidden'); }
                 
-                // ★ Leaderboard Submission & Data Fetch
                 if (window.fetchSRSItems) window.fetchSRSItems();
                 if (window.incrementDailyLaps) window.incrementDailyLaps(); 
 
-                // Send Lap Time if not in PitStop mode
                 if (this.mode === 'vocab' && !this.isPitStopMode && window.recordLapTime && window.currentUser) {
                     const roundName = this.vocabRounds[this.currentRoundIndex] ? this.vocabRounds[this.currentRoundIndex].name : "Custom";
                     const totalQs = this.questions.length;
@@ -2972,7 +3040,6 @@ const idiomData = [
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       
-      // Offline Persistence Enabled
       const db = initializeFirestore(app, {
           localCache: persistentLocalCache({
               tabManager: persistentMultipleTabManager()
@@ -2992,7 +3059,7 @@ const idiomData = [
         loginStatus.innerText = "Connecting to Paddock...";
         const provider = new GoogleAuthProvider();
         try { await signInWithPopup(auth, provider); } 
-        catch (error) { console.error(error); loginStatus.innerText = "Access Denied."; }
+        catch (error) { console.error(error); loginStatus.innerText = "Access Denied. Try Again."; }
       });
 
       logoutBtn.addEventListener('click', () => { 
@@ -3003,7 +3070,6 @@ const idiomData = [
         signOut(auth); 
       });
 
-      // --- Daily Lap Counter ---
       const statsRef = doc(db, "stats", "daily_global");
       
       onSnapshot(statsRef, (doc) => {
@@ -3056,7 +3122,6 @@ const idiomData = [
         }
       });
 
-      // --- Telemetry & Leaderboard Logic ---
       window.fetchSRSItems = async () => {
         if (!window.currentUser) return;
         const CACHE_KEY = `srs_data_${window.currentUser.uid}`;
@@ -3069,18 +3134,29 @@ const idiomData = [
 
         if (now - lastFetch < CACHE_DURATION && localStorage.getItem(CACHE_KEY)) {
             const rawData = JSON.parse(localStorage.getItem(CACHE_KEY));
-            allItems = rawData.map(item => ({ ...item, nextReview: { toDate: () => new Date(item.nextReviewSeconds * 1000) }, seconds: item.nextReviewSeconds }));
+            allItems = rawData.map(item => ({
+                ...item,
+                nextReview: { toDate: () => new Date(item.nextReviewSeconds * 1000) }, 
+                seconds: item.nextReviewSeconds 
+            }));
         } else {
             try {
                 const mistakesRef = collection(db, "users", window.currentUser.uid, "mistakes");
                 const snapshot = await getDocs(mistakesRef);
                 snapshot.forEach(doc => {
                     const d = doc.data();
-                    allItems.push({ id: doc.id, ...d, nextReviewSeconds: d.nextReview.seconds });
+                    allItems.push({ 
+                        id: doc.id, 
+                        ...d,
+                        nextReviewSeconds: d.nextReview.seconds 
+                    });
                 });
                 localStorage.setItem(CACHE_KEY, JSON.stringify(allItems));
                 localStorage.setItem(TIME_KEY, now.toString());
-                allItems = allItems.map(item => ({ ...item, nextReview: { toDate: () => new Date(item.nextReviewSeconds * 1000) } }));
+                allItems = allItems.map(item => ({
+                    ...item,
+                    nextReview: { toDate: () => new Date(item.nextReviewSeconds * 1000) }
+                }));
             } catch (e) { console.error("Telemetry Error:", e); }
         }
 
@@ -3120,9 +3196,10 @@ const idiomData = [
         const nextDate = new Date(); nextDate.setDate(now.getDate() + nextInterval);
 
         await setDoc(targetRef, { word: questionObj.w, meaning: questionObj.meaning || questionObj.m, nextReview: Timestamp.fromDate(nextDate), interval: nextInterval, repetitions: nextRepetitions, easeFactor: nextEaseFactor, lastReviewed: Timestamp.fromDate(now) }, { merge: true });
+        
+        // Cache Update logic removed for brevity as requested by 'rawdata empty' focus, but cloud sync remains.
       };
 
-      // ★ Leaderboard Recording Function
       window.recordLapTime = async (acc, time, round, score, streak) => {
         if (!window.currentUser) return;
         try {
@@ -3144,7 +3221,6 @@ const idiomData = [
 
     </script>
     <script>
-      // ★ PWA化の要：Service Workerの登録
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./service-worker.js')
@@ -3155,4 +3231,3 @@ const idiomData = [
     </script>
 </body>
 </html>
-
