@@ -3,14 +3,14 @@
   "name": "RB Hybrid Learning System",
   "icons": [
     {
-      "src": "https://i.pinimg.com/1200x/d7/05/3a/d7053a0bfa0e97d5b781807a187b8739.jpg",
+      "src": "./icon.jpg",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/jpeg"
     },
     {
-      "src": "https://i.pinimg.com/1200x/d7/05/3a/d7053a0bfa0e97d5b781807a187b8739.jpg",
+      "src": "./icon.jpg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/jpeg"
     }
   ],
   "start_url": "./index.html",
