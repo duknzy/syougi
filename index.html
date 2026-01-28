@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RB Hybrid GP">
-    <link rel="apple-touch-icon" href="icon.jpg">
+    <link rel="apple-touch-icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
 
     <title>RB Hybrid Learning System</title>
@@ -304,8 +304,16 @@
                 <h2 class="f1-font text-2xl font-bold text-yellow-500 tracking-widest">DATA CENTER</h2>
                 <button onclick="quiz.closeOverlay('wordbook-screen')" class="text-gray-400 active:text-white text-3xl p-2">&times;</button>
             </div>
+            <div class="flex gap-2 mb-2 flex-shrink-0 justify-center items-center">
+                <div class="bg-gray-900 p-2 rounded border border-gray-700 flex items-center gap-2">
+                    <span class="text-[9px] text-gray-500 uppercase tracking-widest font-bold">SECTOR</span>
+                    <input type="number" id="wb-start" placeholder="1" class="w-16 bg-black text-white p-1 text-sm rounded border border-gray-700 font-mono text-center focus:border-yellow-500 outline-none">
+                    <span class="text-gray-500">-</span>
+                    <input type="number" id="wb-end" placeholder="END" class="w-16 bg-black text-white p-1 text-sm rounded border border-gray-700 font-mono text-center focus:border-yellow-500 outline-none">
+                </div>
+            </div>
             <div class="flex gap-2 mb-4 flex-shrink-0">
-                <input type="text" id="wb-search" placeholder="Search components..." class="flex-1 bg-black text-white p-2 text-sm rounded border border-gray-700 font-mono">
+                <input type="text" id="wb-search" placeholder="Search components..." class="flex-1 bg-black text-white p-2 text-sm rounded border border-gray-700 font-mono focus:border-yellow-500 outline-none">
                 <button id="wb-filter-btn" class="bg-gray-800 text-white px-3 rounded border border-gray-600 text-xs font-bold uppercase" onclick="quiz.toggleBookFilter()">ALL</button>
             </div>
             <div id="wb-list" class="flex-1 overflow-y-auto wb-scroll text-left space-y-2 pr-1">
@@ -394,7 +402,7 @@
     // ==========================================
     // 単語データ
     const rawData = `
-follow: ～の後に続く、～に従う
+    follow: ～の後に続く、～に従う
 consider: ～を考慮する
 increase: 増える、～を増やす
 expect: ～を予期する
@@ -2421,11 +2429,11 @@ abruptly: 不意に
 conversely: 逆に
 predominantly: 主に
 lest: ～しないように
-`; 
+    `; 
 
     // 熟語データ（プレースホルダー）
     const idiomData = [
-    { id: 1215, japanese: "手間をかけて〜する", prefix: "We (", suffix: ") prepare for the school event.", parts: ["took", "the", "trouble", "to"] },
+   { id: 1215, japanese: "手間をかけて〜する", prefix: "We (", suffix: ") prepare for the school event.", parts: ["took", "the", "trouble", "to"] },
     { id: 1216, japanese: "〜を楽しむ", prefix: "We should not (", suffix: ") the misfortunes of others.", parts: ["take", "delight", "in"] },
     { id: 1217, japanese: "Aに電話をかける", prefix: "I'll (", suffix: ") tomorrow morning.", parts: ["give", "you", "a", "call"] },
     { id: 1218, japanese: "〜を引き起こす", prefix: "The population decline will (", suffix: ") several problems.", parts: ["give", "rise", "to"] },
@@ -2553,8 +2561,10 @@ lest: ～しないように
                 });
             }
             
-            // WB Search
+            // WB Search & Filter Listeners
             document.getElementById('wb-search').addEventListener('input', () => this.renderWordBook());
+            document.getElementById('wb-start').addEventListener('input', () => this.renderWordBook());
+            document.getElementById('wb-end').addEventListener('input', () => this.renderWordBook());
 
             this.parseData();
             this.generateRounds();
@@ -3219,6 +3229,9 @@ lest: ～しないように
         renderWordBook() {
             const listEl = document.getElementById('wb-list');
             const query = document.getElementById('wb-search').value.toLowerCase().trim();
+            const startVal = parseInt(document.getElementById('wb-start').value);
+            const endVal = parseInt(document.getElementById('wb-end').value);
+
             listEl.innerHTML = '';
 
             let dataSrc = this.masterList.length > 0 ? this.masterList : (this.allMistakes || []);
@@ -3236,11 +3249,18 @@ lest: ～しないように
 
             // Filter
             const filtered = merged.filter(item => {
+                // 1. Text Search
                 const matchQ = item.w.toLowerCase().includes(query) || item.m.toLowerCase().includes(query);
-                if (this.bookmarkedOnly) {
-                    return matchQ && (item.srs && item.srs.bookmarked);
-                }
-                return matchQ;
+                
+                // 2. Bookmark Filter
+                const matchBook = this.bookmarkedOnly ? (item.srs && item.srs.bookmarked) : true;
+                
+                // 3. Range Filter
+                // item.id is 0-based index. User inputs 1-based index (e.g., No.1500)
+                const wordNum = item.id + 1;
+                const matchRange = (!startVal || wordNum >= startVal) && (!endVal || wordNum <= endVal);
+
+                return matchQ && matchBook && matchRange;
             });
 
             if (filtered.length === 0) {
@@ -3249,7 +3269,9 @@ lest: ～しないように
             }
 
             // Render Limits (Performance)
-            const displayLimit = 2000;
+            // If range is specified, we might want to show more, but let's keep a safety limit for now.
+            // But if user specified "1500-1600", that's 100 items, so it fits perfectly.
+            const displayLimit = 100;
             const viewData = filtered.slice(0, displayLimit);
 
             viewData.forEach(item => {
@@ -3272,6 +3294,7 @@ lest: ～しないように
                         <div class="w-1 h-8 ${statusColor} rounded-full shrink-0"></div>
                         <div class="text-left overflow-hidden">
                             <div class="flex items-center gap-2">
+                                <span class="text-[9px] text-yellow-500 font-mono opacity-70">No.${item.id + 1}</span>
                                 <span class="font-bold text-gray-200 text-sm f1-font truncate">${item.w}</span>
                                 <span class="text-[9px] text-gray-500 font-mono border border-gray-700 px-1 rounded">${statusText}</span>
                             </div>
@@ -3291,7 +3314,7 @@ lest: ～しないように
             if(filtered.length > displayLimit) {
                  const more = document.createElement('div');
                  more.className = "text-center text-xs text-gray-600 py-2";
-                 more.innerText = `...and ${filtered.length - displayLimit} more. Use search to refine.`;
+                 more.innerText = `...and ${filtered.length - displayLimit} more. Refine sector or search.`;
                  listEl.appendChild(more);
             }
         }
@@ -3547,11 +3570,6 @@ lest: ～しないように
           const safeWordId = btoa(encodeURIComponent(word)).replace(/\//g, '_').replace(/\+/g, '-');
           const targetRef = doc(mistakesRef, safeWordId);
           
-          // 現在の状態を確認するために一度フェッチする（キャッシュからでも良いが）
-          // UI側でBookmarkedならTrueが渡ってくるようにしてもいいが、
-          // ここではDBの値をトグルさせる
-          
-          // 簡易的に、現在のMasterList(allMistakes)から探す
           const currentItem = window.quiz.allMistakes.find(m => m.word === word || m.w === word);
           const isCurrentlyBookmarked = currentItem && currentItem.bookmarked === true;
           const newValue = !isCurrentlyBookmarked;
@@ -3568,11 +3586,9 @@ lest: ～しないように
                   nextReview: currentItem ? currentItem.nextReview : Timestamp.now()
               }, { merge: true });
               
-              // UI更新（再フェッチは重いので手動でメモリ更新）
               if (currentItem) {
                   currentItem.bookmarked = newValue;
               } else {
-                  // 新規アイテムの場合、allMistakesにプッシュ
                    window.quiz.allMistakes.push({ 
                        word: word, meaning: meaning, bookmarked: newValue, 
                        interval: 0, repetitions: 0, easeFactor: 2.5 
@@ -3607,4 +3623,3 @@ lest: ～しないように
     </script>
 </body>
 </html>
-
