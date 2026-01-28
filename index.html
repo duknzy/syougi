@@ -3575,58 +3575,65 @@ lest: ～しないように
       // ---------------------------------------------------------
       // 5. BOOKMARK TOGGLER (INSTANT RESPONSE Ver.)
       // ---------------------------------------------------------
+      // ---------------------------------------------------------
+      // 5. BOOKMARK TOGGLER (FIXED VERSION)
+      // ---------------------------------------------------------
       window.toggleBookmark = async (safeWord, safeMeaning) => {
           if (!window.currentUser) { alert("Sign in required."); return; }
           
-          // エンコードされた文字列を元に戻す
           const word = decodeURIComponent(safeWord);
           const meaning = decodeURIComponent(safeMeaning);
 
-          // 1. まずメモリ上のデータを即座に書き換える（UIの反応速度優先）
           let currentItem = window.quiz.allMistakes.find(m => m.word === word || m.w === word);
           const isCurrentlyBookmarked = currentItem && currentItem.bookmarked === true;
           const newValue = !isCurrentlyBookmarked;
 
-          // メモリ更新
+          // 1. Memory Update (UI即時反映)
           if (currentItem) {
               currentItem.bookmarked = newValue;
           } else {
-              // 新規の場合
               window.quiz.allMistakes.push({ 
                    word: word, meaning: meaning, bookmarked: newValue, 
-                   interval: 0, repetitions: 0, easeFactor: 2.5 
+                   interval: 0, repetitions: 0, easeFactor: 2.5,
+                   // 新規の場合はダミーの秒数を入れておく
+                   nextReviewSeconds: Date.now() / 1000 
               });
+              // 新規作成したアイテムを再取得
+              currentItem = window.quiz.allMistakes.find(m => m.word === word);
           }
-          
-          // ★ 即座に再描画（ユーザーを待たせない）
           window.quiz.renderWordBook(); 
 
-          // 2. その後、裏でゆっくりデータベースと通信する
+          // 2. Prepare Data for Firestore
           const mistakesRef = collection(db, "users", window.currentUser.uid, "mistakes");
           const docId = btoa(encodeURIComponent(word)).replace(/\//g, '_').replace(/\+/g, '-');
           const targetRef = doc(mistakesRef, docId);
-          
+
+          // ★ CRITICAL FIX: 関数を含まないクリーンなTimestampを生成する ★
+          let safeNextReview = Timestamp.now();
+          if (currentItem && currentItem.nextReviewSeconds) {
+              // キャッシュの秒数データから正規のTimestampを復元
+              safeNextReview = Timestamp.fromDate(new Date(currentItem.nextReviewSeconds * 1000));
+          }
+
           try {
-              // DB書き込み
               await setDoc(targetRef, {
                   word: word,
                   meaning: meaning,
                   bookmarked: newValue,
-                  // 既存データの維持（なければ初期値）
                   interval: currentItem ? (currentItem.interval || 0) : 0,
                   repetitions: currentItem ? (currentItem.repetitions || 0) : 0,
                   easeFactor: currentItem ? (currentItem.easeFactor || 2.5) : 2.5,
-                  nextReview: currentItem && currentItem.nextReview ? currentItem.nextReview : Timestamp.now()
+                  // ここで修正済みの safeNextReview を使う
+                  nextReview: safeNextReview
               }, { merge: true });
               
-              console.log(`[Flag] Updated: ${word} -> ${newValue}`);
+              console.log(`[Flag] Saved: ${word}`);
 
           } catch(e) {
               console.error("Bookmark Error:", e);
-              // 万が一エラーが出たら、UIを元に戻す（ロールバック）
+              // ロールバック
               if(currentItem) currentItem.bookmarked = !newValue;
               window.quiz.renderWordBook();
-              alert("Save Failed. Network error?");
           }
       };
         
@@ -3652,4 +3659,5 @@ lest: ～しないように
     </script>
 </body>
 </html>
+
 
