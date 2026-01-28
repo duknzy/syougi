@@ -3289,21 +3289,30 @@ lest: ～しないように
 
                 const isBookmarked = item.srs && item.srs.bookmarked;
 
+                // (前略... divを作成する部分)
+
+                // 特殊文字があっても壊れないようにエンコードして渡す
+                const safeW = encodeURIComponent(item.w);
+                const safeM = encodeURIComponent(item.m);
+                // エスケープ処理（念のため）
+                const displayW = item.w.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                const displayM = item.m.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
                 div.innerHTML = `
                     <div class="flex items-center gap-3 overflow-hidden">
                         <div class="w-1 h-8 ${statusColor} rounded-full shrink-0"></div>
                         <div class="text-left overflow-hidden">
                             <div class="flex items-center gap-2">
                                 <span class="text-[9px] text-yellow-500 font-mono opacity-70">No.${item.id + 1}</span>
-                                <span class="font-bold text-gray-200 text-sm f1-font truncate">${item.w}</span>
+                                <span class="font-bold text-gray-200 text-sm f1-font truncate">${displayW}</span>
                                 <span class="text-[9px] text-gray-500 font-mono border border-gray-700 px-1 rounded">${statusText}</span>
                             </div>
-                            <p class="text-[10px] text-gray-400 truncate">${item.m}</p>
+                            <p class="text-[10px] text-gray-400 truncate">${displayM}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
-                        <button class="text-gray-500 hover:text-cyan-400 p-2" onclick="quiz.speak('${item.w.replace(/'/g, "\\'")}')">🔊</button>
-                        <button class="${isBookmarked ? 'text-red-500' : 'text-gray-600 hover:text-gray-400'} p-2" onclick="window.toggleBookmark('${item.w.replace(/'/g, "\\'")}', '${item.m.replace(/'/g, "\\'")}')">
+                        <button class="text-gray-500 hover:text-cyan-400 p-2" onclick="quiz.speak(decodeURIComponent('${safeW}').replace(/'/g, '\\''))">🔊</button>
+                        <button class="${isBookmarked ? 'text-red-500' : 'text-gray-600 hover:text-gray-400'} p-2" onclick="window.toggleBookmark('${safeW}', '${safeM}')">
                             ${isBookmarked ? '🚩' : '🏳️'}
                         </button>
                     </div>
@@ -3563,44 +3572,64 @@ lest: ～しないように
       // ---------------------------------------------------------
       // 5. BOOKMARK TOGGLER (NEW!)
       // ---------------------------------------------------------
-      window.toggleBookmark = async (word, meaning) => {
+      // ---------------------------------------------------------
+      // 5. BOOKMARK TOGGLER (INSTANT RESPONSE Ver.)
+      // ---------------------------------------------------------
+      window.toggleBookmark = async (safeWord, safeMeaning) => {
           if (!window.currentUser) { alert("Sign in required."); return; }
           
-          const mistakesRef = collection(db, "users", window.currentUser.uid, "mistakes");
-          const safeWordId = btoa(encodeURIComponent(word)).replace(/\//g, '_').replace(/\+/g, '-');
-          const targetRef = doc(mistakesRef, safeWordId);
-          
-          const currentItem = window.quiz.allMistakes.find(m => m.word === word || m.w === word);
+          // エンコードされた文字列を元に戻す
+          const word = decodeURIComponent(safeWord);
+          const meaning = decodeURIComponent(safeMeaning);
+
+          // 1. まずメモリ上のデータを即座に書き換える（UIの反応速度優先）
+          let currentItem = window.quiz.allMistakes.find(m => m.word === word || m.w === word);
           const isCurrentlyBookmarked = currentItem && currentItem.bookmarked === true;
           const newValue = !isCurrentlyBookmarked;
+
+          // メモリ更新
+          if (currentItem) {
+              currentItem.bookmarked = newValue;
+          } else {
+              // 新規の場合
+              window.quiz.allMistakes.push({ 
+                   word: word, meaning: meaning, bookmarked: newValue, 
+                   interval: 0, repetitions: 0, easeFactor: 2.5 
+              });
+          }
+          
+          // ★ 即座に再描画（ユーザーを待たせない）
+          window.quiz.renderWordBook(); 
+
+          // 2. その後、裏でゆっくりデータベースと通信する
+          const mistakesRef = collection(db, "users", window.currentUser.uid, "mistakes");
+          const docId = btoa(encodeURIComponent(word)).replace(/\//g, '_').replace(/\+/g, '-');
+          const targetRef = doc(mistakesRef, docId);
           
           try {
+              // DB書き込み
               await setDoc(targetRef, {
                   word: word,
                   meaning: meaning,
                   bookmarked: newValue,
-                  // もし新規作成ならデフォルト値を入れる
+                  // 既存データの維持（なければ初期値）
                   interval: currentItem ? (currentItem.interval || 0) : 0,
                   repetitions: currentItem ? (currentItem.repetitions || 0) : 0,
                   easeFactor: currentItem ? (currentItem.easeFactor || 2.5) : 2.5,
-                  nextReview: currentItem ? currentItem.nextReview : Timestamp.now()
+                  nextReview: currentItem && currentItem.nextReview ? currentItem.nextReview : Timestamp.now()
               }, { merge: true });
               
-              if (currentItem) {
-                  currentItem.bookmarked = newValue;
-              } else {
-                   window.quiz.allMistakes.push({ 
-                       word: word, meaning: meaning, bookmarked: newValue, 
-                       interval: 0, repetitions: 0, easeFactor: 2.5 
-                   });
-              }
-              window.quiz.renderWordBook(); // 再描画
-              
+              console.log(`[Flag] Updated: ${word} -> ${newValue}`);
+
           } catch(e) {
               console.error("Bookmark Error:", e);
+              // 万が一エラーが出たら、UIを元に戻す（ロールバック）
+              if(currentItem) currentItem.bookmarked = !newValue;
+              window.quiz.renderWordBook();
+              alert("Save Failed. Network error?");
           }
       };
-
+        
       window.incrementDailyLaps = () => {
           const statsRef = doc(db, "stats", "daily_global");
           const todayStr = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }).split(' ')[0];
@@ -3623,3 +3652,4 @@ lest: ～しないように
     </script>
 </body>
 </html>
+
