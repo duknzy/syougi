@@ -77,6 +77,7 @@
             border-top: 4px solid var(--f1-red);
         }
 
+        /* --- UI COMPONENTS --- */
         .option-btn { 
             transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
@@ -86,6 +87,7 @@
         .option-btn:active { transform: scale(0.96); background: rgba(255, 255, 255, 0.1); }
         .option-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
+        /* Idiom Chips */
         .chip-btn {
             transition: all 0.15s;
             position: relative;
@@ -132,6 +134,7 @@
             background: rgba(225, 6, 0, 0.1);
         }
 
+        /* Mode Switcher */
         .mode-btn { transition: all 0.2s; opacity: 0.5; border-bottom: 2px solid transparent; }
         .mode-btn.active { opacity: 1; border-bottom-color: var(--f1-red); color: white; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
 
@@ -160,14 +163,6 @@
         .animate-shake { animation: shake 0.4s ease-in-out; }
         
         .locked { opacity: 0.5; pointer-events: none; }
-
-        /* Logbook UI */
-        .log-entry { background: rgba(0,0,0,0.3); border-left: 4px solid #333; transition: all 0.2s; }
-        .log-entry.status-optimal { border-color: var(--neon-green); }
-        .log-entry.status-degrading { border-color: #eab308; }
-        .log-entry.status-critical { border-color: var(--f1-red); }
-        .log-meaning { filter: blur(5px); transition: filter 0.3s; }
-        .log-meaning.revealed { filter: blur(0); color: var(--neon-cyan); }
     </style>
 </head>
 <body class="carbon-bg">
@@ -185,17 +180,21 @@
         </div>
 
         <div id="start-screen" class="hidden race-card p-6 rounded-2xl relative z-10 animate-slide-in my-auto">
+            
             <div class="flex justify-between items-end mb-6 border-b border-gray-800 pb-4">
                 <div class="text-left">
-                    <p class="text-[10px] text-gray-500 uppercase tracking-widest">Driver</p>
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <p class="text-[10px] text-gray-500 uppercase tracking-widest">Driver</p>
+                    </div>
                     <p id="user-name" class="f1-font text-2xl text-white font-bold truncate max-w-[180px]">TEST DRIVER</p>
                 </div>
-                <button id="logout-btn" class="text-[10px] text-red-500 hover:text-white border border-red-900/50 px-3 py-1 rounded transition-colors uppercase">Sign Out</button>
+                <button id="logout-btn" class="text-[10px] text-red-500 hover:text-white border border-red-900/50 hover:bg-red-600 px-3 py-1 rounded transition-colors uppercase tracking-wider">Sign Out</button>
             </div>
 
             <div class="flex bg-black/40 p-1 rounded-xl mb-6 border border-gray-800">
-                <button onclick="quiz.switchMode('vocab')" id="mode-vocab" class="mode-btn active flex-1 py-3 text-xs font-bold uppercase f1-font">Vocab</button>
-                <button onclick="quiz.switchMode('idiom')" id="mode-idiom" class="mode-btn flex-1 py-3 text-xs font-bold uppercase f1-font">Idiom</button>
+                <button onclick="quiz.switchMode('vocab')" id="mode-vocab" class="mode-btn active flex-1 py-3 text-xs font-bold uppercase tracking-widest f1-font">Vocab</button>
+                <button onclick="quiz.switchMode('idiom')" id="mode-idiom" class="mode-btn flex-1 py-3 text-xs font-bold uppercase tracking-widest f1-font">Idiom</button>
             </div>
 
             <div id="vocab-settings" class="space-y-4">
@@ -207,7 +206,7 @@
                     <div id="tire-status-box" class="bg-black/30 p-3 rounded-xl border border-gray-800 text-center relative overflow-hidden">
                         <p class="text-[9px] text-gray-500 uppercase mb-1">Condition</p>
                         <span id="mistake-count-display" class="f1-font text-xl text-green-500 font-bold">OPTIMAL</span>
-                        <div id="pit-alert-overlay" class="hidden absolute inset-0 bg-red-900/95 flex items-center justify-center cursor-pointer">
+                        <div id="pit-alert-overlay" class="hidden absolute inset-0 bg-red-900/95 flex items-center justify-center cursor-pointer active:bg-red-800 transition-colors">
                             <span class="f1-font text-white font-bold animate-pulse text-xs">PIT STOP REQ</span>
                         </div>
                     </div>
@@ -215,36 +214,47 @@
 
                 <div>
                     <label class="text-gray-500 text-[10px] uppercase tracking-widest block mb-1 pl-1">Circuit Selection</label>
-                    <select id="round-selector" class="w-full bg-black/50 text-white p-3 rounded-lg border border-gray-700 outline-none font-mono text-base appearance-none"></select>
+                    <div class="relative">
+                        <select id="round-selector" class="w-full bg-black/50 text-white p-3 rounded-lg border border-gray-700 focus:border-red-500 outline-none font-mono text-base appearance-none"></select>
+                        <div class="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-500">▼</div>
+                    </div>
                 </div>
 
                 <div class="bg-gray-900/50 p-4 rounded-xl border border-gray-800">
                     <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-3 pl-1">Tire Compound (Length)</p>
                     <div class="flex justify-between gap-2 mb-4">
-                        <button onclick="quiz.setTireStrategy(10, 'soft')" id="tire-soft" class="tire-btn tire-soft flex-1 bg-black/40 text-gray-400 p-2 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase">🔴 Soft</button>
-                        <button onclick="quiz.setTireStrategy(20, 'medium')" id="tire-medium" class="tire-btn tire-medium active flex-1 bg-black/40 text-gray-400 p-2 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase">🟡 Med</button>
-                        <button onclick="quiz.setTireStrategy(50, 'hard')" id="tire-hard" class="tire-btn tire-hard flex-1 bg-black/40 text-gray-400 p-2 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase">⚪ Hard</button>
+                        <button onclick="quiz.setTireStrategy(10, 'soft')" id="tire-soft" class="tire-btn tire-soft flex-1 bg-black/40 text-gray-400 p-2 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase tracking-wider active:bg-gray-800">🔴 Soft<br><span class="text-[10px] opacity-70">10 Qs</span></button>
+                        <button onclick="quiz.setTireStrategy(20, 'medium')" id="tire-medium" class="tire-btn tire-medium active flex-1 bg-black/40 text-gray-400 p-2 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase tracking-wider active:bg-gray-800">🟡 Med<br><span class="text-[10px] opacity-70">20 Qs</span></button>
+                        <button onclick="quiz.setTireStrategy(50, 'hard')" id="tire-hard" class="tire-btn tire-hard flex-1 bg-black/40 text-gray-400 p-2 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase tracking-wider active:bg-gray-800">⚪ Hard<br><span class="text-[10px] opacity-70">50 Qs</span></button>
                     </div>
                     <div class="flex flex-col gap-3 border-t border-gray-800 pt-3">
                         <label class="flex items-center justify-between cursor-pointer group p-1">
-                            <span class="text-xs font-bold text-gray-300">🔄 REVERSE GRID</span>
-                            <input type="checkbox" id="reverse-mode" class="accent-f1 w-5 h-5">
+                            <span class="text-xs font-bold text-gray-300 group-hover:text-cyan-400 transition-colors flex items-center gap-2"><span class="text-cyan-400">🔄</span> REVERSE GRID</span>
+                            <input type="checkbox" id="reverse-mode" class="accent-f1 w-5 h-5 cursor-pointer">
                         </label>
                         <label class="flex items-center justify-between cursor-pointer group p-1">
-                            <span class="text-xs font-bold text-gray-300">🔊 RACE ENGINEER</span>
-                            <input type="checkbox" id="audio-mode" class="accent-f1 w-5 h-5" checked>
+                            <span class="text-xs font-bold text-gray-300 group-hover:text-green-400 transition-colors flex items-center gap-2"><span class="text-green-500">🔊</span> RACE ENGINEER</span>
+                            <input type="checkbox" id="audio-mode" class="accent-f1 w-5 h-5 cursor-pointer" checked>
                         </label>
                         <label class="flex items-center justify-between cursor-pointer group p-1">
-                            <span class="text-xs font-bold text-gray-300">⚡ INSTANT DRS</span>
-                            <input type="checkbox" id="instant-mode" class="accent-f1 w-5 h-5">
+                            <span class="text-xs font-bold text-gray-300 group-hover:text-yellow-400 transition-colors flex items-center gap-2"><span class="text-yellow-400">⚡</span> INSTANT DRS</span>
+                            <input type="checkbox" id="instant-mode" class="accent-f1 w-5 h-5 cursor-pointer">
                         </label>
                     </div>
                 </div>
 
                 <div class="pt-4 border-t border-gray-800">
                     <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Garage Tools</p>
-                    <input type="text" id="search-input" placeholder="Quick Scan (Search)..." class="w-full bg-black text-white p-3 rounded-lg border border-gray-700 outline-none font-mono text-base mb-3">
-                    <div id="search-results" class="hidden absolute bottom-full left-0 w-full mb-1 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl max-h-48 overflow-y-auto z-50"></div>
+                    <div class="mb-3 relative group">
+                        <input type="text" id="search-input" placeholder="Quick Scan (Search)..." class="w-full bg-black text-white p-3 pl-3 rounded-lg border border-gray-700 focus:border-red-500 outline-none font-mono text-base transition-colors shadow-inner">
+                        <div id="search-results" class="hidden absolute bottom-full left-0 w-full mb-1 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl max-h-48 overflow-y-auto z-50"></div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="custom-start" placeholder="1" class="w-16 bg-black text-white p-2 rounded-lg border border-gray-700 text-center text-base font-mono">
+                        <span class="text-gray-500">-</span>
+                        <input type="number" id="custom-end" placeholder="50" class="w-16 bg-black text-white p-2 rounded-lg border border-gray-700 text-center text-base font-mono">
+                        <button onclick="quiz.createCustomRound()" class="flex-1 bg-gray-800 active:bg-gray-700 text-white text-[10px] font-bold uppercase rounded-lg py-2 border border-gray-600">Set Custom</button>
+                    </div>
                 </div>
             </div>
 
@@ -254,44 +264,43 @@
                     <div class="f1-font text-5xl text-white font-bold" id="idiom-count-display">0</div>
                     <p class="text-xs text-gray-500 mt-2">Sorting Challenge Mode</p>
                 </div>
+                <div class="bg-black/30 p-4 rounded-xl border border-gray-800 text-xs text-gray-400 leading-relaxed">
+                    <strong class="text-white block mb-1">INSTRUCTION:</strong>
+                    Arrange the shuffled chips to complete the sentence. Incorrect ordering will cause a temporary "Crash" penalty.
+                </div>
             </div>
 
-            <button onclick="quiz.start()" class="mt-6 w-full f1-font bg-gradient-to-r from-red-600 to-red-700 text-white py-5 rounded-xl font-bold tracking-[0.2em] uppercase transition-all shadow-lg text-xl border-b-4 border-red-900">Start Engine</button>
+            <button onclick="quiz.start()" class="mt-6 w-full f1-font bg-gradient-to-r from-red-600 to-red-700 active:from-red-700 active:to-red-800 text-white py-5 rounded-xl font-bold tracking-[0.2em] uppercase transition-all transform active:scale-95 shadow-lg shadow-red-900/30 text-xl border-b-4 border-red-900">Start Engine</button>
             
-            <div id="vocab-tools" class="mt-4 pt-4 border-t border-gray-800 grid grid-cols-2 gap-2">
-                <button onclick="quiz.openTelemetry()" class="w-full border border-gray-700 active:bg-gray-800 text-gray-400 py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"><span>📊</span> Telemetry</button>
-                <button onclick="quiz.openLogbook()" class="w-full border border-gray-700 active:bg-gray-800 text-cyan-400 py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"><span>📓</span> Logbook</button>
+            <div id="vocab-tools" class="mt-4 pt-4 border-t border-gray-800">
+                <button onclick="quiz.openTelemetry()" class="w-full border border-gray-700 active:bg-gray-800 text-gray-400 py-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"><span>📊</span> Telemetry Data</button>
             </div>
         </div>
         
         <div id="telemetry-screen" class="hidden race-card p-6 rounded-2xl text-center border-t-4 border-blue-500 h-full overflow-y-auto my-auto">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="f1-font text-2xl font-bold text-blue-400">TELEMETRY</h2>
-                <button onclick="quiz.closeOverlay('telemetry-screen')" class="text-gray-400 text-3xl p-2">&times;</button>
+                <h2 class="f1-font text-2xl font-bold text-blue-400 tracking-widest">TELEMETRY</h2>
+                <button onclick="quiz.closeOverlay('telemetry-screen')" class="text-gray-400 active:text-white text-3xl p-2">&times;</button>
             </div>
-            <canvas id="weaknessRadarChart" class="mb-4 h-56 w-full"></canvas>
-            <div class="text-left">
-                <h3 class="text-xs text-red-500 font-bold uppercase mb-2">Degradation Report</h3>
-                <div id="worst-words-list" class="space-y-1 max-h-60 overflow-y-auto"></div>
+            <div class="bg-black/50 p-2 rounded-xl mb-4 border border-gray-800 h-56 w-full relative">
+                <canvas id="weaknessRadarChart"></canvas>
             </div>
-        </div>
-
-        <div id="logbook-screen" class="hidden race-card p-6 rounded-2xl border-t-4 border-cyan-500 h-full overflow-y-auto my-auto">
-            <div class="flex justify-between items-center mb-4 sticky top-0 bg-rb-navy/90 backdrop-blur z-10 py-2">
-                <h2 class="f1-font text-2xl font-bold text-cyan-400 tracking-widest">LOGBOOK</h2>
-                <button onclick="quiz.closeOverlay('logbook-screen')" class="text-gray-400 text-3xl p-2">&times;</button>
+            <div class="text-left mb-4">
+                <h3 class="text-xs text-red-500 font-bold uppercase tracking-widest mb-2">Degradation Report</h3>
+                <div id="worst-words-list" class="space-y-1 max-h-60 overflow-y-auto pr-2"></div>
             </div>
-            <input type="text" id="log-search" placeholder="Search Logbook..." class="w-full bg-black/50 text-white p-3 rounded-lg border border-gray-700 focus:border-cyan-500 outline-none font-mono text-sm mb-4">
-            <div id="logbook-list" class="space-y-2"></div>
         </div>
 
         <div id="quiz-screen" class="hidden race-card p-6 rounded-2xl shadow-2xl relative flex flex-col justify-between my-auto min-h-[500px]">
             <div class="flex justify-between items-start mb-6">
                 <div class="flex flex-col text-left">
-                    <span id="circuit-name" class="f1-font text-[10px] text-gray-400 uppercase">ROUND 1</span>
+                    <span id="circuit-name" class="f1-font text-[10px] text-gray-400 uppercase tracking-widest">ROUND 1</span>
                     <span id="question-number" class="f1-font text-white font-bold text-lg">LAP 1/20</span>
                 </div>
-                <div id="timer" class="f1-font text-2xl text-yellow-400 font-mono">0.00s</div>
+                <div class="text-right">
+                    <div id="timer" class="f1-font text-2xl text-yellow-400 font-mono">0.00s</div>
+                    <div id="streak-display" class="f1-font text-[10px] text-green-500 font-bold uppercase tracking-widest hidden">PURPLE SECTOR</div>
+                </div>
             </div>
             <div class="w-full bg-gray-800 h-1 mb-8 rounded-full overflow-hidden">
                 <div id="progress-fill" class="bg-gradient-to-r from-red-600 to-yellow-500 h-full w-0 transition-all duration-300"></div>
@@ -299,8 +308,9 @@
             
             <div id="vocab-interface" class="flex-grow flex flex-col justify-between hidden">
                 <div class="flex-grow flex flex-col items-center justify-center mb-8 relative">
-                    <h2 id="target-word" class="f1-font text-4xl md:text-5xl font-bold text-white tracking-wide text-center"></h2>
-                    <button id="speak-btn" class="mt-4 text-gray-500 active:text-cyan-400 p-4 rounded-full border border-gray-700 bg-black/40">
+                    <div class="absolute -top-6 text-gray-500 text-[10px] uppercase tracking-widest" id="question-label">Target</div>
+                    <h2 id="target-word" class="f1-font text-4xl md:text-5xl font-bold text-white tracking-wide drop-shadow-xl break-words px-2 text-center transition-all"></h2>
+                    <button id="speak-btn" class="mt-4 text-gray-500 active:text-cyan-400 transition-colors p-4 rounded-full border border-gray-700 bg-black/40 active:bg-black/80">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
                     </button>
                 </div>
@@ -308,14 +318,20 @@
             </div>
 
             <div id="idiom-interface" class="flex-grow flex flex-col justify-between hidden">
-                <div id="idiom-japanese" class="f1-font text-xl font-bold text-gray-200 text-center mb-6 w-full"></div>
-                <div class="flex flex-wrap items-center justify-center gap-3 mb-2 px-1">
-                    <span id="idiom-prefix" class="text-gray-400 f1-font text-lg"></span>
-                    <div id="answer-slot" class="answer-slot flex flex-wrap gap-2 items-center justify-center p-3 rounded-lg min-w-[120px]"></div>
-                    <span id="idiom-suffix" class="text-gray-400 f1-font text-lg"></span>
+                 <div class="flex-grow flex flex-col items-center">
+                    <div id="idiom-japanese" class="f1-font text-xl md:text-2xl font-bold text-gray-200 tracking-wide text-center mb-6 break-words w-full">Loading...</div>
+                    <div class="w-full mb-4 px-1">
+                        <div class="flex flex-wrap items-center justify-center gap-3 mb-2">
+                            <span id="idiom-prefix" class="text-gray-400 f1-font text-lg"></span>
+                            <div id="answer-slot" class="answer-slot flex flex-wrap gap-2 items-center justify-center p-3 rounded-lg min-w-[120px]"></div>
+                            <span id="idiom-suffix" class="text-gray-400 f1-font text-lg"></span>
+                        </div>
+                    </div>
                 </div>
                 <div id="word-pool" class="flex flex-wrap justify-center gap-3 w-full mt-auto p-4 bg-black/40 rounded-xl border border-gray-800"></div>
-                <button id="idiom-next-btn" class="hidden mt-4 w-full f1-font bg-[#39ff14] text-black py-4 rounded-xl font-bold uppercase shadow-lg">Next Sector >></button>
+                <button id="idiom-next-btn" class="hidden mt-4 w-full f1-font bg-[#39ff14] text-black py-4 rounded-xl font-bold tracking-widest uppercase shadow-[0_0_20px_rgba(57,255,20,0.3)] hover:bg-white">
+                    Next Sector >>
+                </button>
             </div>
 
             <div id="feedback" class="h-8 mt-2 flex items-center justify-center text-sm font-bold tracking-wider uppercase"></div>
@@ -324,30 +340,40 @@
         <div id="result-screen" class="hidden race-card p-8 rounded-2xl shadow-2xl text-center animate-slide-in my-auto">
             <h2 id="result-title" class="f1-font text-3xl mb-2 font-bold text-white italic">CHECKERED FLAG</h2>
             <div class="w-full h-1 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 mb-8"></div>
+            
             <div id="accuracy-display" class="f1-font text-7xl font-bold mb-2 text-white glitch-text">95.0%</div>
             <p id="rank-text" class="f1-font text-sm mb-8 text-gray-400 font-mono">P1: MAX VERSTAPPEN</p>
             
-            <div id="pass-area" class="hidden mb-6">
+            <div id="pass-area" class="hidden mb-6 animate-slide-in">
                 <p class="text-[#39ff14] font-bold f1-font text-xl mb-2">LICENSE ACQUIRED</p>
-                <button id="pass-btn" class="w-full bg-black text-white border border-gray-600 font-mono py-3 rounded-lg hover:bg-gray-800 flex items-center justify-center gap-2">
-                    <span>COPY LICENSE ID</span>
-                </button>
+                <div class="bg-green-900/20 border border-green-500/50 p-4 rounded-xl">
+                    <p class="text-xs text-green-400 mb-2 uppercase tracking-widest">Secret Key</p>
+                    <button id="pass-btn" class="w-full bg-black text-white border border-gray-600 font-mono py-3 rounded-lg hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
+                        <span>COPY LICENSE ID</span>
+                    </button>
+                </div>
             </div>
             
-            <div id="fail-msg" class="hidden mb-6"><p class="text-red-500 font-bold f1-font text-sm">LICENSE DENIED (Req: 90%)</p></div>
+            <div id="fail-msg" class="hidden mb-6">
+                <p class="text-red-500 font-bold f1-font text-sm">LICENSE DENIED (Req: 90%)</p>
+            </div>
+
             <div class="bg-black/40 p-4 rounded-xl mb-8 text-left max-h-48 overflow-y-auto border border-gray-800" id="review-list"></div>
             
             <div class="grid grid-cols-2 gap-4">
-                <button onclick="quiz.returnToGrid()" class="f1-font border border-gray-600 text-white py-4 rounded-xl font-bold uppercase text-sm">Garage</button>
-                <button id="next-round-btn" class="f1-font bg-red-600 text-white py-4 rounded-xl font-bold shadow-lg uppercase text-sm">Next Sector</button>
+                <button onclick="quiz.returnToGrid()" class="f1-font border border-gray-600 active:bg-white active:text-black text-white py-4 rounded-xl font-bold transition-all uppercase text-sm">Garage</button>
+                <button id="next-round-btn" class="f1-font bg-red-600 active:bg-red-700 text-white py-4 rounded-xl font-bold transition-all shadow-lg shadow-red-900/50 uppercase text-sm">Next Sector</button>
             </div>
         </div>
     </div>
 
     <script>
-    // DATA LOAD (Placeholder, keep existing words here)
+    // ==========================================
+    // DATA LOAD (Placeholders)
+    // ==========================================
+    // 単語データ
     const rawData = `
-follow: ～の後に続く、～に従う
+    follow: ～の後に続く、～に従う
 consider: ～を考慮する
 increase: 増える、～を増やす
 expect: ～を予期する
@@ -643,7 +669,7 @@ nervous: 神経質な、不安な
 alike: 似ている
 domestic: 家庭の、国内の
 negative: 否定の
-moral: デ徳的な
+moral: 道徳的な
 eager: 熱望している
 remarkable: すばらしい
 evil: 悪い
@@ -1351,7 +1377,7 @@ priority: 優先
 obstacle: 障害
 appetite: 食欲
 tension: 緊張
-tribe: ポ族
+tribe: 部族
 budget: 予算
 campaign: 運動、キャンペーン
 sorrow: 悲しみ
@@ -1832,7 +1858,7 @@ personnel: 職員
 triumph: 勝利
 arithmetic: 算数
 self-esteem: 自尊心
-microbe: 微微生物
+microbe: 微生物
 odds: 可能性
 chaos: 混沌
 destiny: 運命
@@ -2374,8 +2400,9 @@ abruptly: 不意に
 conversely: 逆に
 predominantly: 主に
 lest: ～しないように
-`;
+`; 
 
+    // 熟語データ（プレースホルダー）
     const idiomData = [
     { id: 1215, japanese: "手間をかけて〜する", prefix: "We (", suffix: ") prepare for the school event.", parts: ["took", "the", "trouble", "to"] },
     { id: 1216, japanese: "〜を楽しむ", prefix: "We should not (", suffix: ") the misfortunes of others.", parts: ["take", "delight", "in"] },
@@ -2452,68 +2479,139 @@ lest: ～しないように
     { id: 1283, japanese: "どんな犠牲を払っても", prefix: "We must avoid war (", suffix: ").", parts: ["at", "all", "costs"] }
     ];
 
+// ==========================================
+// MAIN LOGIC
+// ==========================================
+    document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
+    document.addEventListener('touchmove', function(event) { if (event.scale !== 1) { event.preventDefault(); } }, { passive: false });
+
     class HybridQuiz {
         constructor() {
-            this.mode = 'vocab'; this.wordsPerRound = 20; this.masterList = []; this.vocabRounds = []; this.idiomRounds = [];
-            this.currentRoundIndex = 0; this.questions = []; this.currentIndex = 0; this.missCount = 0; this.missedWordsLog = [];
-            this.startTime = 0; this.lapStartTime = 0; this.timerInterval = null; this.dueMistakes = []; this.allMistakes = []; 
-            this.isPitStopMode = false; this.isReverseMode = false; this.isInstantMode = false; 
-            this.synth = window.speechSynthesis; this.englishVoices = [];
-            if (this.synth) { this.synth.onvoiceschanged = () => this.loadVoices(); this.loadVoices(); }
+            this.mode = 'vocab'; 
+            this.wordsPerRound = 20; 
+            this.masterList = [];
+            this.vocabRounds = [];
+            this.currentRoundIndex = 0;
+            this.currentIdiomParts = [];
+            this.shuffledIdiomParts = [];
+            this.userAns = [];
+            this.isLocked = false;
+            this.questions = [];
+            this.currentIndex = 0;
+            this.missCount = 0;
+            this.missedWordsLog = [];
+            this.startTime = 0;
+            this.lapStartTime = 0; 
+            this.timerInterval = null;
+            this.currentStreak = 0;
+            this.maxStreak = 0; // ★ ADDED: Max Streak
+            this.dueMistakes = [];
+            this.allMistakes = []; 
+            this.isPitStopMode = false;
+            this.isReverseMode = false;
+            this.isInstantMode = false; 
+            const instantCheck = document.getElementById('instant-mode');
+            if(instantCheck) {
+                instantCheck.addEventListener('change', (e) => {
+                    this.isInstantMode = e.target.checked;
+                });
+            }
             this.isAutoAudio = localStorage.getItem('vocab_auto_audio') !== 'false';
-            this.parseData(); this.generateRounds(); this.initUI(); this.initSearch(); 
+            this.synth = window.speechSynthesis;
+            this.englishVoices = [];
+            if (this.synth) { this.synth.onvoiceschanged = () => this.loadVoices(); this.loadVoices(); }
+
+            const audioCheck = document.getElementById('audio-mode');
+            if(audioCheck) {
+                audioCheck.checked = this.isAutoAudio;
+                audioCheck.addEventListener('change', (e) => {
+                    this.isAutoAudio = e.target.checked;
+                    localStorage.setItem('vocab_auto_audio', this.isAutoAudio);
+                });
+            }
+
+            this.parseData();
+            this.generateRounds();
+            this.initUI();
+            this.initSearch(); 
         }
 
         loadVoices() {
             if(!this.synth) return;
+            let attempts = 0;
             const load = () => {
-                this.englishVoices = this.synth.getVoices().filter(v => v.lang.startsWith('en'));
-                if (this.englishVoices.length === 0) setTimeout(load, 100);
+                const allVoices = this.synth.getVoices();
+                this.englishVoices = allVoices.filter(v => v.lang.startsWith('en'));
+                if (this.englishVoices.length === 0 && attempts < 10) {
+                    attempts++;
+                    setTimeout(load, 100);
+                } else {
+                    console.log(`[TTS] Engine Ready: ${this.englishVoices.length} voices found.`);
+                }
             };
             load();
         }
 
         speak(text) {
-            if (!this.synth || this.englishVoices.length === 0) return;
+            if (!this.synth || this.englishVoices.length === 0) {
+                console.warn("[TTS] Engine warming up...");
+                return; 
+            }
             this.synth.cancel(); 
-            const u = new SpeechSynthesisUtterance(text);
-            u.voice = this.englishVoices.find(v => v.name.includes('Google US English')) || this.englishVoices[0]; 
-            u.rate = 1.1; this.synth.speak(u);
+            const utterance = new SpeechSynthesisUtterance(text);
+            const preferredVoice = this.englishVoices.find(v => v.name.includes('Google US English')) 
+                                || this.englishVoices.find(v => v.name.includes('Samantha'))
+                                || this.englishVoices.find(v => v.name.includes('Zira'))
+                                || this.englishVoices[0]; 
+            utterance.voice = preferredVoice;
+            utterance.rate = 1.1; 
+            utterance.pitch = 1.0;
+            this.synth.speak(utterance);
         }
 
         parseData() {
-            if(!rawData.trim()) return;
-            this.masterList = rawData.split('\n').filter(l => l.includes(':')).map(l => {
-                const s = l.indexOf(':');
-                return { w: l.substring(0, s).trim(), m: l.substring(s+1).trim() };
+            if(!rawData.trim()) { this.masterList = []; return; }
+            const lines = rawData.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('[source'));
+            this.masterList = [];
+            lines.forEach(line => {
+                let sep = -1;
+                if (line.indexOf('\t') !== -1) sep = line.indexOf('\t');
+                else if (line.indexOf(':') !== -1) sep = line.indexOf(':');
+                else if (line.indexOf('：') !== -1) sep = line.indexOf('：');
+                if (sep !== -1) {
+                    this.masterList.push({ w: line.substring(0, sep).trim(), m: line.substring(sep + 1).trim() });
+                }
             });
         }
 
         generateRounds() {
-            const wordCopy = [...this.masterList]; this.vocabRounds = [];
-            let i = 1;
+            const wordCopy = [...this.masterList]; 
+            this.vocabRounds = [];
+            let roundNum = 1;
+            let currentWordIndex = 1; 
             while (wordCopy.length > 0) {
                 const chunk = wordCopy.splice(0, this.wordsPerRound);
-                this.vocabRounds.push({ id: i, name: `VOCAB ROUND ${i} (${i*this.wordsPerRound-this.wordsPerRound+1}-${i*this.wordsPerRound})`, words: chunk });
-                i++;
-            }
-            this.idiomRounds = [];
-            for (let j = 0; j < idiomData.length; j += 10) {
-                const chunk = idiomData.slice(j, j + 10);
-                this.idiomRounds.push({ id: Math.floor(j/10)+1, name: `IDIOM ROUND ${Math.floor(j/10)+1} (${j+1}-${j+10})`, words: chunk });
+                if (chunk.length > 0) {
+                    this.vocabRounds.push({ id: roundNum, name: `ROUND ${roundNum} (No.${currentWordIndex} - ${currentWordIndex + chunk.length - 1})`, words: chunk });
+                    roundNum++;
+                    currentWordIndex += chunk.length;
+                }
             }
         }
 
         initUI() {
-            this.updateRoundSelector();
+            const selector = document.getElementById('round-selector');
+            selector.innerHTML = '';
+            if(this.vocabRounds.length === 0) { selector.innerHTML = '<option>Load Data or Login</option>'; }
+            else {
+                this.vocabRounds.forEach((round, index) => {
+                    const opt = document.createElement('option');
+                    opt.value = index;
+                    opt.text = round.name;
+                    selector.appendChild(opt);
+                });
+            }
             document.getElementById('idiom-count-display').innerText = idiomData.length;
-        }
-        
-        updateRoundSelector() {
-            const s = document.getElementById('round-selector'); s.innerHTML = '';
-            const target = this.mode === 'vocab' ? this.vocabRounds : this.idiomRounds;
-            if(target.length === 0) s.innerHTML = '<option>No Data</option>';
-            else target.forEach((r, idx) => { const opt = document.createElement('option'); opt.value = idx; opt.text = r.name; s.appendChild(opt); });
         }
 
         initSearch() {
@@ -2522,161 +2620,487 @@ lest: ～しないように
             input.addEventListener('input', (e) => {
                 const q = e.target.value.toLowerCase().trim();
                 if (!q) { results.classList.add('hidden'); return; }
-                const hits = this.masterList.filter(item => item.w.toLowerCase().includes(q) || item.m.toLowerCase().includes(q)).slice(0, 30);
-                results.classList.toggle('hidden', hits.length === 0);
-                results.innerHTML = hits.map(h => `<div onclick="quiz.speak('${h.w.replace(/'/g, "\\'")}')" class="p-3 border-b border-gray-800 active:bg-gray-800 cursor-pointer"><span class="text-red-400 font-bold text-xs f1-font">${h.w}</span><br><span class="text-gray-400 text-[10px]">${h.m}</span></div>`).join('');
+                const hits = this.masterList.map((item, index) => ({ ...item, i: index + 1 }))
+                    .filter(item => item.w.toLowerCase().includes(q) || item.m.toLowerCase().includes(q))
+                    .slice(0, 50);
+                if (hits.length > 0) {
+                    results.classList.remove('hidden');
+                    results.innerHTML = hits.map(h => `
+                        <div onclick="quiz.speak('${h.w.replace(/'/g, "\\'")}')" class="p-3 border-b border-gray-800 active:bg-gray-800 cursor-pointer flex justify-between items-center group">
+                            <div class="text-left"><div class="flex items-baseline gap-2"><span class="text-[10px] text-yellow-500 font-mono opacity-70">No.${h.i}</span><span class="text-red-400 font-bold text-xs f1-font">${h.w}</span></div><span class="text-gray-400 text-[10px] pl-1">${h.m}</span></div>
+                            <button class="text-[8px] bg-gray-700 text-white px-2 py-1 rounded-full uppercase">Listen</button>
+                        </div>`).join('');
+                } else {
+                    results.classList.remove('hidden');
+                    results.innerHTML = `<div class="p-3 text-gray-500 text-[10px] text-center">NO DATA</div>`;
+                }
             });
+            document.addEventListener('click', (e) => { if (!input.contains(e.target) && !results.contains(e.target)) results.classList.add('hidden'); });
         }
 
+        createCustomRound() {
+            const s = parseInt(document.getElementById('custom-start').value) - 1;
+            const e = parseInt(document.getElementById('custom-end').value);
+            if(isNaN(s) || isNaN(e) || s < 0 || e > this.masterList.length || s >= e) { alert("Invalid Range"); return; }
+            const customWords = this.masterList.slice(s, e);
+            this.vocabRounds.unshift({ id: 'custom', name: `CUSTOM (No.${s+1}-${e})`, words: customWords });
+            this.initUI();
+            document.getElementById('round-selector').value = 0;
+        }
+        
         setTireStrategy(count, type) {
-            this.wordsPerRound = count; this.generateRounds(); this.updateRoundSelector();
+            this.wordsPerRound = count;
+            this.generateRounds();
+            this.initUI();
             document.querySelectorAll('.tire-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`tire-${type}`).classList.add('active');
         }
 
-        switchMode(m) {
-            this.mode = m;
+        switchMode(newMode) {
+            this.mode = newMode;
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`mode-${m}`).classList.add('active');
-            this.updateRoundSelector();
-            document.getElementById('vocab-settings').classList.toggle('hidden', m !== 'vocab');
-            document.getElementById('idiom-settings').classList.toggle('hidden', m !== 'idiom');
+            document.getElementById(`mode-${newMode}`).classList.add('active');
+            
+            if (newMode === 'vocab') {
+                document.getElementById('vocab-settings').classList.remove('hidden');
+                document.getElementById('vocab-tools').classList.remove('hidden');
+                document.getElementById('idiom-settings').classList.add('hidden');
+            } else {
+                document.getElementById('vocab-settings').classList.add('hidden');
+                document.getElementById('vocab-tools').classList.add('hidden');
+                document.getElementById('idiom-settings').classList.remove('hidden');
+            }
         }
 
         start() {
-            this.currentIndex = 0; this.missCount = 0; this.missedWordsLog = [];
-            this.startTime = Date.now(); this.startTimer();
+            this.currentIndex = 0;
+            this.missCount = 0;
+            this.currentStreak = 0; // Reset
+            this.maxStreak = 0;     // Reset
+            this.missedWordsLog = [];
+            this.startTime = Date.now();
+            this.startTimer();
+            
             document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
             document.getElementById('quiz-screen').classList.remove('hidden');
-            document.getElementById('vocab-interface').classList.toggle('hidden', this.mode !== 'vocab');
-            document.getElementById('idiom-interface').classList.toggle('hidden', this.mode !== 'idiom');
-            if (this.mode === 'vocab') this.startVocabMode();
-            else this.startIdiomMode();
+            
+            document.getElementById('vocab-interface').classList.add('hidden');
+            document.getElementById('idiom-interface').classList.add('hidden');
+
+            if (this.mode === 'vocab') {
+                this.startVocabMode();
+            } else {
+                this.startIdiomMode();
+            }
         }
 
         startVocabMode() {
-            const s = document.getElementById('round-selector'); this.currentRoundIndex = parseInt(s.value);
-            const r = this.vocabRounds[this.currentRoundIndex];
+            if(this.vocabRounds.length === 0) { alert("Data not loaded"); this.returnToGrid(); return; }
+            this.isPitStopMode = false;
+            document.getElementById('vocab-interface').classList.remove('hidden');
+            
+            const selector = document.getElementById('round-selector');
+            this.currentRoundIndex = parseInt(selector.value);
+            const selectedRound = this.vocabRounds[this.currentRoundIndex];
+            
             this.isReverseMode = document.getElementById('reverse-mode').checked;
-            document.getElementById('circuit-name').innerText = r.name;
-            this.questions = r.words.map(t => {
-                const qT = this.isReverseMode ? t.m : t.w;
-                const aT = this.isReverseMode ? t.w : t.m;
-                const opt = [aT, ...this.masterList.filter(x => x.w !== t.w).sort(() => Math.random()-0.5).slice(0,3).map(x => this.isReverseMode ? x.w : x.m)].sort(() => Math.random()-0.5);
-                return { w: t.w, m: t.m, qText: qT, aText: aT, o: opt };
-            }).sort(() => Math.random()-0.5);
+            
+            document.getElementById('circuit-name').innerText = selectedRound.name + (this.isReverseMode ? " [REV]" : "");
+            document.getElementById('question-label').innerText = this.isReverseMode ? "TRANSLATE" : "MEANING";
+
+            this.questions = selectedRound.words.map(target => {
+                const qText = this.isReverseMode ? target.m : target.w;
+                const aText = this.isReverseMode ? target.w : target.m;
+                const distractors = this.getDistractors(target, this.isReverseMode);
+                const options = [aText, ...distractors].sort(() => Math.random() - 0.5);
+                return { w: target.w, m: target.m, qText: qText, aText: aText, o: options };
+            });
+            this.questions.sort(() => Math.random() - 0.5);
             this.showVocabQuestion();
         }
 
         startIdiomMode() {
-            const s = document.getElementById('round-selector'); this.currentRoundIndex = parseInt(s.value);
-            const r = this.idiomRounds[this.currentRoundIndex];
-            document.getElementById('circuit-name').innerText = r.name;
-            this.questions = [...r.words].sort(() => Math.random()-0.5);
+            if(idiomData.length === 0) { alert("No idiom data found."); this.returnToGrid(); return; }
+            document.getElementById('idiom-interface').classList.remove('hidden');
+            document.getElementById('circuit-name').innerText = "IDIOM SORTING";
+            
+            this.questions = [...idiomData].sort(() => Math.random() - 0.5);
             this.showIdiomQuestion();
+        }
+        
+       getDistractors(targetWord, isReverse) {
+            const distractors = [];
+            if (this.masterList.length < 4) return ["Option A", "Option B", "Option C"]; 
+
+            const targetString = isReverse ? targetWord.w : targetWord.m;
+            const targetLen = targetString.length;
+
+            let smartPool = this.masterList.filter(item => {
+                const str = isReverse ? item.w : item.m;
+                if (str === targetString) return false;
+                return Math.abs(str.length - targetLen) <= 2;
+            });
+
+            if (smartPool.length < 10) {
+                smartPool = this.masterList.filter(item => {
+                    const str = isReverse ? item.w : item.m;
+                    return str !== targetString;
+                });
+            }
+
+            let attempts = 0;
+            while (distractors.length < 3 && attempts < 100) {
+                const r = smartPool[Math.floor(Math.random() * smartPool.length)];
+                const candidate = isReverse ? r.w : r.m;
+                if (!distractors.includes(candidate)) {
+                    distractors.push(candidate);
+                }
+                attempts++;
+            }
+            while (distractors.length < 3) distractors.push("---");
+            return distractors;
         }
 
         showVocabQuestion() {
             const q = this.questions[this.currentIndex];
             document.getElementById('question-number').innerText = `LAP ${this.currentIndex + 1} / ${this.questions.length}`;
-            document.getElementById('target-word').innerText = q.qText;
+            
+            const targetDisplay = document.getElementById('target-word');
+            targetDisplay.innerText = q.qText;
+            targetDisplay.className = (this.isReverseMode && q.qText.length > 8) 
+                ? "f1-font text-3xl font-bold text-white tracking-wide break-words px-2"
+                : "f1-font text-5xl font-bold text-white tracking-wide drop-shadow-lg break-words px-2";
+
             this.lapStartTime = Date.now(); 
+
             document.getElementById('progress-fill').style.width = `${(this.currentIndex / this.questions.length) * 100}%`;
             document.getElementById('feedback').innerText = '';
+            
+            const speakBtn = document.getElementById('speak-btn');
+            speakBtn.onclick = () => this.speak(q.w);
             if (this.isAutoAudio && !this.isReverseMode) setTimeout(() => this.speak(q.w), 200);
-            const cont = document.getElementById('options-container');
-            const render = () => {
-                cont.innerHTML = '';
-                q.o.forEach(o => {
-                    const b = document.createElement('button');
-                    b.className = 'option-btn w-full text-left p-5 rounded-xl bg-white/5 border border-white/10 font-bold';
-                    b.innerText = o; b.onclick = () => this.handleVocabAnswer(o, q);
-                    cont.appendChild(b);
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = ''; 
+            
+            const renderOptions = () => {
+                container.innerHTML = '';
+                q.o.forEach(opt => {
+                    const btn = document.createElement('button');
+                    const fontClass = this.isReverseMode ? "f1-font tracking-wider text-xl" : "text-lg";
+                    btn.className = `option-btn w-full text-left p-5 rounded-xl bg-white/5 border border-white/10 active:border-red-500 font-bold shadow-lg ${fontClass}`;
+                    btn.innerText = opt;
+                    btn.onclick = () => this.handleVocabAnswer(opt, q);
+                    container.appendChild(btn);
                 });
             };
-            if (document.getElementById('instant-mode').checked) render();
-            else {
-                cont.innerHTML = `<button onclick="this.remove(); quiz.renderOptions()" class="w-full h-24 bg-gray-900/50 border-2 border-dashed border-gray-600 rounded-xl text-gray-500 uppercase animate-pulse">Visualize Meaning</button>`;
-                this.renderOptions = render;
+
+            if (this.isInstantMode) {
+                renderOptions();
+            } else {
+                const revealBtn = document.createElement('button');
+                revealBtn.className = 'col-span-1 md:col-span-2 w-full h-24 bg-gray-900/50 border-2 border-dashed border-gray-600 rounded-xl text-gray-400 f1-font text-lg uppercase tracking-widest active:border-yellow-500 active:text-yellow-500 transition-all flex flex-col items-center justify-center gap-1 animate-pulse';
+                revealBtn.innerHTML = `<span>VISUALIZE MEANING</span><span class="text-[10px] text-gray-500 font-mono">TAP TO UNLOCK</span>`;
+                revealBtn.onclick = () => { 
+                    renderOptions();
+                };
+                container.appendChild(revealBtn);
             }
         }
 
-        handleVocabAnswer(s, q) {
-            const correct = (s === q.aText);
-            if (window.handleSRSUpdate) window.handleSRSUpdate(q, correct, (Date.now()-this.lapStartTime)/1000);
-            if (correct) {
+        handleVocabAnswer(selected, q) {
+            const btns = document.querySelectorAll('.option-btn');
+            if (btns.length > 0 && btns[0].disabled) return;
+            btns.forEach(b => b.disabled = true);
+
+            const feedback = document.getElementById('feedback');
+            const timeTaken = (Date.now() - this.lapStartTime) / 1000;
+            const isCorrect = (selected === q.aText);
+
+            if (window.handleSRSUpdate) {
+                window.handleSRSUpdate({ ...q, timeTaken: timeTaken }, isCorrect);
+            }
+
+            if (isCorrect) {
+                // ★ ADDED: Streak Logic
+                this.currentStreak++;
+                if (this.currentStreak > this.maxStreak) {
+                    this.maxStreak = this.currentStreak;
+                }
+
                 if(this.isReverseMode) this.speak(q.w);
+                
+                if (timeTaken < 1.2) {
+                    feedback.innerHTML = `<span class="text-[#39ff14] text-xs font-bold animate-pulse">🟣 PURPLE SECTOR (${timeTaken.toFixed(2)}s)</span>`;
+                } else if (timeTaken > 5.0) {
+                    feedback.innerHTML = `<span class="text-yellow-500 text-xs font-bold">🟡 SLOW (${timeTaken.toFixed(2)}s)</span>`;
+                }
+
                 setTimeout(() => {
                     this.currentIndex++;
                     if (this.currentIndex < this.questions.length) this.showVocabQuestion();
                     else this.finish();
                 }, 400); 
+
             } else {
-                this.missCount++; document.getElementById('feedback').innerText = `CRASH: ${q.w} = ${q.m}`;
-                if (!this.missedWordsLog.find(i => i.w === q.w)) this.missedWordsLog.push({ w: q.w, m: q.m });
+                this.missCount++;
+                this.currentStreak = 0; // ★ ADDED: Reset Streak
+                
+                feedback.innerText = `WRONG: ${q.w} = ${q.m}`;
+                feedback.className = "mt-4 text-center h-6 font-bold text-red-500 animate-pulse";
+                if (!this.missedWordsLog.find(item => item.w === q.w)) this.missedWordsLog.push({ w: q.w, m: q.m });
+                
                 this.questions.push(q);
-                setTimeout(() => this.showVocabQuestion(), 1500);
+                setTimeout(() => { 
+                    this.currentIndex++; 
+                    this.showVocabQuestion(); 
+                }, 1500);
             }
         }
 
+        // --- IDIOM ENGINE ---
         showIdiomQuestion() {
-            const d = this.questions[this.currentIndex];
-            document.getElementById('idiom-japanese').innerText = d.japanese;
-            document.getElementById('idiom-prefix').innerText = d.prefix;
-            document.getElementById('idiom-suffix').innerText = d.suffix;
-            const slot = document.getElementById('answer-slot'); slot.innerHTML = '';
-            this.userAns = []; this.isLocked = false;
-            this.shuffledParts = [...d.parts].sort(() => Math.random()-0.5);
+            const data = this.questions[this.currentIndex];
+            document.getElementById('question-number').innerText = `LAP ${this.currentIndex + 1} / ${this.questions.length}`;
+            document.getElementById('progress-fill').style.width = `${(this.currentIndex / this.questions.length) * 100}%`;
+            document.getElementById('feedback').innerHTML = "";
+            document.getElementById('idiom-next-btn').classList.add('hidden');
+            
+            document.getElementById('idiom-japanese').innerText = data.japanese;
+            document.getElementById('idiom-prefix').innerText = data.prefix;
+            document.getElementById('idiom-suffix').innerText = data.suffix;
+            
+            document.getElementById('answer-slot').classList.remove('correct-lane', 'wrong-lane');
+            document.getElementById('answer-slot').innerHTML = '';
+
+            this.userAns = [];
+            this.currentIdiomParts = [...data.parts];
+            this.shuffledIdiomParts = [...data.parts];
+            this.shuffle(this.shuffledIdiomParts);
+            
+            this.isLocked = false;
             this.renderIdiomPool();
         }
 
         renderIdiomPool() {
-            const p = document.getElementById('word-pool'); p.innerHTML = '';
-            const used = [...this.userAns];
-            const rem = this.shuffledParts.filter(x => { const idx = used.indexOf(x); if(idx>-1) { used.splice(idx,1); return false; } return true; });
-            rem.forEach(w => {
-                const b = document.createElement('button'); b.className = 'chip-btn chip-pool px-4 py-3 rounded-lg border border-gray-700';
-                b.innerText = w; b.onclick = () => { if(!this.isLocked) { this.userAns.push(w); this.renderIdiomSlot(); this.renderIdiomPool(); } };
-                p.appendChild(b);
+            const poolEl = document.getElementById('word-pool');
+            poolEl.innerHTML = '';
+            const remaining = this.getRemainingParts(this.shuffledIdiomParts, this.userAns);
+            
+            remaining.forEach((word) => {
+                const btn = document.createElement('button');
+                btn.className = 'chip-btn chip-pool f1-font px-4 py-3 rounded-lg text-lg border border-gray-700 shadow-md active:bg-gray-700';
+                btn.innerText = word;
+                if(this.isLocked) btn.classList.add('locked');
+                btn.onclick = () => { if(!this.isLocked) this.moveWordToSlot(word); };
+                poolEl.appendChild(btn);
             });
         }
 
         renderIdiomSlot() {
-            const s = document.getElementById('answer-slot');
-            s.innerHTML = this.userAns.map(w => `<button class="chip-btn chip-slot px-3 py-2 rounded-md">${w}</button>`).join('');
-            if (this.userAns.length === this.questions[this.currentIndex].parts.length) {
-                if (this.userAns.every((v, i) => v === this.questions[this.currentIndex].parts[i])) {
-                    s.classList.add('correct-lane'); document.getElementById('idiom-next-btn').classList.remove('hidden');
-                    document.getElementById('idiom-next-btn').onclick = () => {
-                        this.currentIndex++; if (this.currentIndex < this.questions.length) this.showIdiomQuestion(); else this.finish();
-                    };
-                } else {
-                    this.isLocked = true; s.classList.add('wrong-lane', 'animate-shake');
-                    setTimeout(() => { s.classList.remove('wrong-lane', 'animate-shake'); this.userAns = []; this.isLocked = false; this.renderIdiomPool(); this.renderIdiomSlot(); }, 800);
+            const slotEl = document.getElementById('answer-slot');
+            slotEl.innerHTML = '';
+            this.userAns.forEach((word, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'chip-btn chip-slot f1-font px-3 py-2 rounded-md text-lg';
+                btn.innerText = word;
+                if(this.isLocked) btn.classList.add('locked');
+                btn.onclick = () => { if(!this.isLocked) this.moveWordToPool(idx); };
+                slotEl.appendChild(btn);
+            });
+            this.checkIdiomWin();
+        }
+
+        moveWordToSlot(word) {
+            this.userAns.push(word);
+            this.renderIdiomPool();
+            this.renderIdiomSlot();
+        }
+
+        moveWordToPool(idx) {
+            this.userAns.splice(idx, 1);
+            this.renderIdiomPool();
+            this.renderIdiomSlot();
+        }
+
+        getRemainingParts(allParts, usedParts) {
+            const pool = [...allParts];
+            const used = [...usedParts];
+            used.forEach(u => {
+                const i = pool.indexOf(u);
+                if (i > -1) pool.splice(i, 1);
+            });
+            return pool;
+        }
+
+        checkIdiomWin() {
+            const correctOrder = this.questions[this.currentIndex].parts;
+            const slotEl = document.getElementById('answer-slot');
+            if (this.userAns.length !== correctOrder.length) return;
+            const isCorrect = this.userAns.every((val, index) => val === correctOrder[index]);
+
+            if (isCorrect) {
+                // Streak Update (Idiom)
+                this.currentStreak++;
+                if (this.currentStreak > this.maxStreak) this.maxStreak = this.currentStreak;
+
+                slotEl.classList.add('correct-lane');
+                document.getElementById('feedback').innerHTML = "<span class='text-[#39ff14] text-lg'>✅ PURPLE SECTOR</span>";
+                slotEl.querySelectorAll('.chip-btn').forEach(c => c.classList.add('chip-correct'));
+                
+                const nextBtn = document.getElementById('idiom-next-btn');
+                nextBtn.classList.remove('hidden');
+                nextBtn.onclick = () => {
+                    this.currentIndex++;
+                    if (this.currentIndex < this.questions.length) this.showIdiomQuestion();
+                    else this.finish();
+                };
+                
+                if (window.handleSRSUpdate) {
+                    const q = this.questions[this.currentIndex];
+                    window.handleSRSUpdate({ w: q.japanese, m: q.parts.join(' '), docId: 'idiom_' + q.id }, true);
                 }
+
+            } else {
+                this.missCount++;
+                this.currentStreak = 0; // Streak Reset
+
+                const q = this.questions[this.currentIndex];
+                if (!this.missedWordsLog.find(item => item.w === "Idiom Order")) {
+                    this.missedWordsLog.push({ w: "Idiom Order Error", m: q.japanese });
+                }
+                if (window.handleSRSUpdate) {
+                    window.handleSRSUpdate({ w: q.japanese, m: q.parts.join(' '), docId: 'idiom_' + q.id }, false);
+                }
+
+                this.isLocked = true;
+                document.getElementById('feedback').innerHTML = "<span class='text-[#e10600]'>⚠️ CRASHED! RESETTING...</span>";
+                slotEl.classList.add('wrong-lane', 'animate-shake');
+                setTimeout(() => {
+                    slotEl.classList.remove('animate-shake', 'wrong-lane');
+                    document.getElementById('feedback').innerHTML = "";
+                    this.userAns = [];
+                    this.isLocked = false;
+                    this.renderIdiomPool();
+                    this.renderIdiomSlot();
+                }, 800);
             }
         }
 
+        // --- COMMON UTILS ---
         startTimer() {
             if (this.timerInterval) clearInterval(this.timerInterval);
             this.timerInterval = setInterval(() => { document.getElementById('timer').innerText = ((Date.now() - this.startTime) / 1000).toFixed(2) + 's'; }, 50);
+        }
+
+        shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        copyToClipboard(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                btn.innerText = "AUTO-COPIED!";
+                btn.classList.remove("bg-black", "text-white");
+                btn.classList.add("bg-green-500", "text-black", "border", "border-green-400");
+                setTimeout(() => {
+                    btn.innerText = "COPY LICENSE ID";
+                    btn.classList.add("bg-black", "text-white");
+                    btn.classList.remove("bg-green-500", "text-black", "border", "border-green-400");
+                }, 3000);
+            }).catch(err => {
+                console.log("Copy failed", err);
+                btn.innerText = "COPY LICENSE ID";
+            });
         }
 
         finish() {
             clearInterval(this.timerInterval);
             document.getElementById('quiz-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
-            const time = (Date.now()-this.startTime)/1000;
-            const acc = Math.max(0, 100-(this.missCount*(this.mode==='vocab'?5:10)));
-            document.getElementById('accuracy-display').innerText = `${acc.toFixed(1)}%`;
-            document.getElementById('accuracy-display').style.color = acc >= 90 ? "#4ade80" : "#ef4444";
-            document.getElementById('pass-area').classList.toggle('hidden', acc < 90);
-            document.getElementById('fail-msg').classList.toggle('hidden', acc >= 90);
-            document.getElementById('rank-text').innerText = `Time: ${time.toFixed(2)}s | Misses: ${this.missCount}`;
-            document.getElementById('pass-btn').onclick = () => { navigator.clipboard.writeText('barcelona'); alert('License ID Copied'); };
-            const rev = document.getElementById('review-list');
-            rev.innerHTML = this.missedWordsLog.map(i => `<div class="mb-2 p-2 bg-red-900/10 border rounded">${i.w}: ${i.m}</div>`).join('') || '<p class="text-green-500">Perfect Session</p>';
-            if (window.incrementDailyLaps) window.incrementDailyLaps(acc, time);
+            
+            const totalTime = (Date.now() - this.startTime) / 1000;
+            // 正答率計算
+            let totalQs = this.questions.length;
+            if (totalQs === 0) totalQs = 1; 
+            
+            // シンプルな正答率計算 (正解数/総数)
+            let correctCount = totalQs - this.missCount;
+            // 負にならないように
+            if (correctCount < 0) correctCount = 0;
+            let accuracy = (correctCount / totalQs) * 100;
+            
+            const accDisplay = document.getElementById('accuracy-display');
+            accDisplay.innerText = `${accuracy.toFixed(1)}%`;
+
+            // ----------------------------------------------
+            // ★ ADDED: Save Result to Leaderboard
+            // ----------------------------------------------
+            if (window.saveRaceResult) {
+                let roundName = "UNKNOWN ROUND";
+                if (this.isPitStopMode) {
+                    roundName = "SRS PIT STOP";
+                } else if (this.mode === 'idiom') {
+                    roundName = "IDIOM CHALLENGE";
+                } else if (this.vocabRounds[this.currentRoundIndex]) {
+                    roundName = this.vocabRounds[this.currentRoundIndex].name;
+                }
+
+                const resultData = {
+                    accuracy: parseFloat(accuracy.toFixed(1)),
+                    round: roundName,
+                    score: `${correctCount}/${totalQs}`,
+                    streak: this.maxStreak,
+                    time: parseFloat(totalTime.toFixed(2))
+                };
+                window.saveRaceResult(resultData);
+            }
+            // ----------------------------------------------
+            
+            // ★ PASS / FAIL LOGIC ★
+            const passArea = document.getElementById('pass-area');
+            const failMsg = document.getElementById('fail-msg');
+            const passBtn = document.getElementById('pass-btn');
+            const licenseId = `barcelona`;
+
+            if (accuracy >= 90) {
+                // Pass Logic
+                accDisplay.style.color = "#4ade80"; // Green
+                passArea.classList.remove('hidden');
+                failMsg.classList.add('hidden');
+                
+                // Automatic Copy Attempt
+                this.copyToClipboard(licenseId, passBtn);
+                
+                // Manual Copy Listener
+                passBtn.onclick = () => this.copyToClipboard(licenseId, passBtn);
+
+            } else {
+                // Fail Logic
+                accDisplay.style.color = "#ef4444"; // Red
+                passArea.classList.add('hidden');
+                failMsg.classList.remove('hidden');
+            }
+
+            document.getElementById('rank-text').innerText = `Time: ${totalTime.toFixed(2)}s | Misses: ${this.missCount}`;
+            document.getElementById('result-title').innerText = "CHECKERED FLAG";
+            
+            const review = document.getElementById('review-list');
+            let summaryHtml = `<div class="mb-4 font-bold text-white uppercase text-sm tracking-widest border-b border-gray-700 pb-2">Lap Analysis</div>`;
+            if (this.missedWordsLog.length > 0) { summaryHtml += this.missedWordsLog.map(item => `<div class="mb-2 text-sm p-2 bg-red-900/10 border border-red-900/30 rounded"><span class="font-bold text-white block">${item.w}</span><span class="text-gray-400">${item.m}</span></div>`).join(''); } else { summaryHtml += '<p class="text-green-500 font-bold">Perfect Lap. No Issues Detected.</p>'; }
+            review.innerHTML = summaryHtml;
+            
+            const nextBtn = document.getElementById('next-round-btn');
+            if (this.mode === 'vocab' && !this.isPitStopMode && this.currentRoundIndex + 1 < this.vocabRounds.length) {
+                nextBtn.classList.remove('hidden');
+                nextBtn.onclick = () => { document.getElementById('round-selector').value = this.currentRoundIndex + 1; this.start(); };
+            } else { nextBtn.classList.add('hidden'); }
+            
+            if (window.fetchSRSItems) window.fetchSRSItems();
+            if (window.incrementDailyLaps) window.incrementDailyLaps(); 
         }
 
         returnToGrid() {
@@ -2684,50 +3108,80 @@ lest: ～しないように
             document.getElementById('start-screen').classList.remove('hidden');
             if (window.fetchSRSItems) window.fetchSRSItems();
         }
+        
+        updatePitStopButton(count) {
+            const text = document.getElementById('mistake-count-display');
+            const overlay = document.getElementById('pit-alert-overlay');
+            if (count > 0) {
+                text.innerText = "CRITICAL"; text.classList.remove('text-green-500'); text.classList.add('text-red-500');
+                overlay.classList.remove('hidden'); overlay.onclick = () => this.startPitStop();
+            } else {
+                text.innerText = "OPTIMAL"; text.classList.add('text-green-500'); text.classList.remove('text-red-500');
+                overlay.classList.add('hidden');
+            }
+        }
+        
+        startPitStop() {
+            if (!this.dueMistakes || this.dueMistakes.length === 0) return;
+            this.isPitStopMode = true; 
+            this.switchMode('vocab'); 
+            
+            this.questions = this.dueMistakes.map(item => {
+                const word = item.word || item.w;
+                const meaning = item.meaning || item.m;
+                const targetWord = { w: word, m: meaning };
+                
+                const distractors = this.getDistractors(targetWord, false);
+                const options = [targetWord.m, ...distractors].sort(() => Math.random() - 0.5);
+                return { w: targetWord.w, m: targetWord.m, qText: targetWord.w, aText: targetWord.m, o: options, docId: item.id, interval: item.interval || 0, repetitions: item.repetitions || 0, easeFactor: item.easeFactor || 2.5 };
+            });
+            
+            this.questions.sort(() => Math.random() - 0.5);
+            this.currentIndex = 0; this.missCount = 0; this.missedWordsLog = [];
+            this.currentStreak = 0; this.maxStreak = 0;
+            document.getElementById('circuit-name').innerText = "SRS PIT STOP";
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            
+            document.getElementById('vocab-interface').classList.remove('hidden');
+            document.getElementById('idiom-interface').classList.add('hidden');
 
+            this.startTime = Date.now();
+            this.startTimer();
+            this.showVocabQuestion();
+        }
+        
         openTelemetry() {
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('telemetry-screen').classList.remove('hidden');
-            const worst = [...this.allMistakes].sort((a,b)=>a.easeFactor-b.easeFactor).slice(0, 15);
-            document.getElementById('worst-words-list').innerHTML = worst.map(i=>`<div class="p-2 bg-red-900/10 text-xs mb-1">${i.word} (EF:${i.easeFactor.toFixed(2)})</div>`).join('');
-            const ctx = document.getElementById('weaknessRadarChart');
-            if(this.chart) this.chart.destroy();
-            const buckets = [0,0,0,0,0];
-            this.allMistakes.forEach(m => { if(m.interval<=1) buckets[0]++; else if(m.interval<=6) buckets[1]++; else if(m.interval<=14) buckets[2]++; else if(m.interval<=30) buckets[3]++; else buckets[4]++; });
-            this.chart = new Chart(ctx, { type: 'bar', data: { labels: ['1d', '2-6d', '2w', '1m', 'Master'], datasets: [{ data: buckets, backgroundColor: '#e10600' }] }, options: { plugins: { legend: false } } });
-        }
-
-        // --- NEW LOGBOOK LOGIC ---
-        openLogbook() {
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('logbook-screen').classList.remove('hidden');
-            this.renderLogbook();
-            document.getElementById('log-search').oninput = (e) => this.renderLogbook(e.target.value);
-        }
-
-        renderLogbook(q = "") {
-            const list = document.getElementById('logbook-list'); list.innerHTML = "";
-            const query = q.toLowerCase();
-            const entries = this.masterList.filter(i => i.w.toLowerCase().includes(query) || i.m.toLowerCase().includes(query));
-            entries.forEach(i => {
-                const srs = this.allMistakes.find(m => m.word === i.w) || { easeFactor: 0 };
-                let stClass = "status-new", stLabel = "NEW";
-                if (srs.easeFactor > 0) {
-                    if (srs.easeFactor >= 2.6) { stClass = "status-optimal"; stLabel = "OPTIMAL"; }
-                    else if (srs.easeFactor >= 2.0) { stClass = "status-degrading"; stLabel = "DEGRADING"; }
-                    else { stClass = "status-critical"; stLabel = "CRITICAL"; }
-                }
-                const div = document.createElement('div');
-                div.className = `log-entry ${stClass} p-3 rounded-lg flex justify-between items-center cursor-pointer active:bg-white/5`;
-                div.innerHTML = `<div class="flex-grow"><div class="flex items-center gap-2"><span class="f1-font font-bold text-white text-lg">${i.w}</span><span class="text-[8px] px-2 py-0.5 rounded-full bg-black/40 border border-gray-700">${stLabel}</span></div><div class="log-meaning text-xs mt-1">${i.m}</div></div><div class="text-[10px] font-mono text-gray-500">EF:${(srs.easeFactor||2.5).toFixed(2)}</div>`;
-                div.onclick = () => { this.speak(i.w); div.querySelector('.log-meaning').classList.toggle('revealed'); };
-                list.appendChild(div);
+            const mistakes = this.allMistakes || [];
+            const worstWords = [...mistakes].sort((a, b) => (a.easeFactor || 2.5) - (b.easeFactor || 2.5)).slice(0, 20);
+            const listContainer = document.getElementById('worst-words-list');
+            if (worstWords.length === 0) listContainer.innerHTML = `<div class="text-gray-500 text-xs italic">No degradation.</div>`;
+            else {
+                listContainer.innerHTML = worstWords.map(item => `
+                    <div class="flex justify-between items-center bg-gray-900/40 p-3 rounded-lg border-l-2 border-red-500 mb-1">
+                        <span class="font-bold text-gray-200 text-xs f1-font">${item.word || item.w}</span>
+                        <span class="text-[10px] text-gray-500 font-mono">EF:${(item.easeFactor||2.5).toFixed(2)}</span>
+                    </div>`).join('');
+            }
+            const ctx = document.getElementById('weaknessRadarChart').getContext('2d');
+            if (this.telemetryChart) this.telemetryChart.destroy();
+            const buckets = [0, 0, 0, 0, 0];
+            mistakes.forEach(m => {
+                const int = m.interval || 0;
+                if (int <= 1) buckets[0]++; else if (int <= 6) buckets[1]++; else if (int <= 14) buckets[2]++; else if (int <= 30) buckets[3]++; else buckets[4]++;
+            });
+            this.telemetryChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: ['1d', '2-6d', '2w', '1mo', 'Master'], datasets: [{ data: buckets, backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6'], borderColor: '#333', borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } } }
             });
         }
-
-        closeOverlay(id) { document.getElementById(id).classList.add('hidden'); document.getElementById('start-screen').classList.remove('hidden'); }
-        updatePitStopButton(c) { const o = document.getElementById('pit-alert-overlay'); o.classList.toggle('hidden', c===0); o.onclick = () => this.startPitStop(); }
-        startPitStop() { /* Reuse logic from provided snippet */ }
+        closeOverlay(id) {
+            document.getElementById(id).classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
     }
 
     window.quiz = new HybridQuiz();
@@ -2736,61 +3190,259 @@ lest: ～しないように
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-      import { getFirestore, collection, addDoc, getDocs, doc, setDoc, Timestamp, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      import { getFirestore, collection, addDoc, query, where, getDocs, doc, setDoc, updateDoc, Timestamp, orderBy, limit, runTransaction, onSnapshot, getDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
       const firebaseConfig = {
-        apiKey: "AIzaSyDg2EgiI-DMzmoT20zF4VJfm1MxtmhdJQQ", authDomain: "english-test-8ad4a.firebaseapp.com",
-        projectId: "english-test-8ad4a", storageBucket: "english-test-8ad4a.firebasestorage.app",
-        messagingSenderId: "998730699699", appId: "1:998730699699:web:8245c7259cec7dd20231c6"
+        apiKey: "AIzaSyDg2EgiI-DMzmoT20zF4VJfm1MxtmhdJQQ",
+        authDomain: "english-test-8ad4a.firebaseapp.com",
+        projectId: "english-test-8ad4a",
+        storageBucket: "english-test-8ad4a.firebasestorage.app",
+        messagingSenderId: "998730699699",
+        appId: "1:998730699699:web:8245c7259cec7dd20231c6",
+        measurementId: "G-FC2LRFVFGF"
       };
 
-      const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
 
-      onAuthStateChanged(auth, async (u) => {
-        if (u) {
-          window.currentUser = u; document.getElementById('user-name').innerText = u.displayName || "DRIVER";
-          document.getElementById('gate-screen').classList.add('hidden'); document.getElementById('start-screen').classList.remove('hidden');
-          await window.fetchSRSItems();
+      const gateScreen = document.getElementById('gate-screen');
+      const startScreen = document.getElementById('start-screen');
+      const loginStatus = document.getElementById('login-status');
+      const gateLoginBtn = document.getElementById('gate-login-btn');
+      const logoutBtn = document.getElementById('logout-btn');
+
+      window.currentUser = null;
+
+      // ---------------------------------------------------------
+      // 1. AUTH & PERSISTENCE
+      // ---------------------------------------------------------
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          console.log("Authorized Driver:", user.displayName);
+          window.currentUser = user;
+          loginStatus.innerText = "Syncing Telemetry Data...";
+          
+          try {
+              await window.fetchSRSItems();
+              
+              document.getElementById('user-name').innerText = user.displayName || "RACING DRIVER";
+              gateScreen.classList.add('hidden');
+              
+              const isQuizActive = !document.getElementById('quiz-screen').classList.contains('hidden');
+              const isResultActive = !document.getElementById('result-screen').classList.contains('hidden');
+              
+              if (!isQuizActive && !isResultActive) {
+                  startScreen.classList.remove('hidden');
+              }
+          } catch (error) {
+              console.error("Init Error:", error);
+              loginStatus.innerText = "Data Sync Failed. Retrying...";
+              setTimeout(() => location.reload(), 3000);
+          }
+
         } else {
-          document.getElementById('gate-screen').classList.remove('hidden'); document.getElementById('start-screen').classList.add('hidden');
+          window.currentUser = null;
+          startScreen.classList.add('hidden');
+          gateScreen.classList.remove('hidden');
+          loginStatus.innerText = "System Standby...";
+          document.getElementById('user-name').innerText = "TEST DRIVER";
         }
       });
 
-      document.getElementById('gate-login-btn').onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
-      document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
+      gateLoginBtn.addEventListener('click', async () => {
+        loginStatus.innerText = "Connecting to Paddock...";
+        const provider = new GoogleAuthProvider();
+        try { await signInWithPopup(auth, provider); } 
+        catch (error) { console.error(error); loginStatus.innerText = "Access Denied."; }
+      });
 
-      // --- Daily Laps Fix ---
-      onSnapshot(doc(db, "stats", "daily_global"), (snap) => {
-          const display = document.getElementById('daily-laps-display');
-          const today = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }).split(' ')[0];
-          if (snap.exists() && snap.data().date === today) display.innerText = snap.data().count || 0;
-          else display.innerText = 0;
+      logoutBtn.addEventListener('click', () => { 
+        if(window.currentUser) {
+            localStorage.removeItem(`srs_data_${window.currentUser.uid}`);
+            localStorage.removeItem(`srs_time_${window.currentUser.uid}`);
+        }
+        signOut(auth).then(() => { alert("Signed Out Successfully"); location.reload(); }); 
+      });
+
+      // ---------------------------------------------------------
+      // 2. DATA SYNC
+      // ---------------------------------------------------------
+      const statsRef = doc(db, "stats", "daily_global");
+      onSnapshot(statsRef, (doc) => {
+          if (doc.exists()) {
+              const data = doc.data();
+              const todayStr = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }).split(' ')[0];
+              if (data.date === todayStr) {
+                  document.getElementById('daily-laps-display').innerText = data.count;
+              } else {
+                  document.getElementById('daily-laps-display').innerText = 0;
+              }
+          }
       });
 
       window.fetchSRSItems = async () => {
         if (!window.currentUser) return;
-        const snap = await getDocs(collection(db, "users", window.currentUser.uid, "mistakes"));
-        const all = []; snap.forEach(d => all.push({ id: d.id, ...d.data() }));
-        window.quiz.allMistakes = all;
-        window.quiz.updatePitStopButton(all.filter(i => i.nextReview.seconds <= Date.now()/1000).length);
+        const CACHE_KEY = `srs_data_${window.currentUser.uid}`;
+        const TIME_KEY = `srs_time_${window.currentUser.uid}`;
+        const CACHE_DURATION = 12 * 60 * 60 * 1000; 
+
+        const now = Date.now();
+        const lastFetch = parseInt(localStorage.getItem(TIME_KEY) || '0');
+        let allItems = [];
+        let loadedFromCache = false;
+
+        // --- Sector 1: Cache Read ---
+        if (now - lastFetch < CACHE_DURATION && localStorage.getItem(CACHE_KEY)) {
+            try {
+                const rawString = localStorage.getItem(CACHE_KEY);
+                if (rawString) {
+                    const rawData = JSON.parse(rawString);
+                    allItems = rawData.map(item => ({ 
+                        ...item, 
+                        nextReview: { toDate: () => new Date(item.nextReviewSeconds * 1000) } 
+                    }));
+                    loadedFromCache = true;
+                }
+            } catch (e) { 
+                console.warn("Cache corrupted"); 
+                localStorage.removeItem(CACHE_KEY); 
+            }
+        }
+
+        // --- Sector 2: Server Fetch ---
+        if (!loadedFromCache) {
+            try {
+                const mistakesRef = collection(db, "users", window.currentUser.uid, "mistakes");
+                const snapshot = await getDocs(mistakesRef);
+                allItems = [];
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    allItems.push({ id: doc.id, ...d, nextReviewSeconds: d.nextReview.seconds });
+                });
+                localStorage.setItem(CACHE_KEY, JSON.stringify(allItems));
+                localStorage.setItem(TIME_KEY, now.toString());
+                allItems = allItems.map(item => ({ ...item, nextReview: { toDate: () => new Date(item.nextReviewSeconds * 1000) } }));
+            } catch (e) { console.error("Telemetry Error:", e); throw e; }
+        }
+
+        const dueItems = [];
+        const nowTs = Date.now() / 1000;
+        allItems.forEach(item => { if (item.nextReviewSeconds <= nowTs) dueItems.push(item); });
+
+        if(window.quiz) {
+            window.quiz.allMistakes = allItems;
+            window.quiz.dueMistakes = dueItems;
+            window.quiz.updatePitStopButton(dueItems.length);
+        }
       };
 
-      window.handleSRSUpdate = async (q, correct, time) => {
+      // ---------------------------------------------------------
+      // 3. SRS ALGORITHM v2.0
+      // ---------------------------------------------------------
+      window.handleSRSUpdate = async (questionObj, isCorrect) => {
         if (!window.currentUser) return;
-        const ref = doc(db, "users", window.currentUser.uid, "mistakes", btoa(encodeURIComponent(q.w)).replace(/\//g,'_'));
-        const s = window.quiz.allMistakes.find(m => m.word === q.w) || { interval: 0, repetitions: 0, easeFactor: 2.5 };
-        let nextEF = Math.min(3.0, Math.max(1.3, s.easeFactor + (correct ? (time < 1.2 ? 0.3 : 0.1) : -0.2)));
-        let nextInt = correct ? (s.repetitions === 0 ? 1 : (s.repetitions === 1 ? 6 : Math.round(s.interval * nextEF))) : 1;
-        const nextDate = new Date(); nextDate.setDate(nextDate.getDate() + nextInt);
-        await setDoc(ref, { word: q.w, meaning: q.m, nextReview: Timestamp.fromDate(nextDate), interval: nextInt, repetitions: correct ? s.repetitions+1 : 0, easeFactor: nextEF }, { merge: true });
+        
+        const mistakesRef = collection(db, "users", window.currentUser.uid, "mistakes");
+        const now = new Date();
+        const safeWordId = questionObj.docId || btoa(encodeURIComponent(questionObj.w)).replace(/\//g, '_').replace(/\+/g, '-');
+        const targetRef = doc(mistakesRef, safeWordId);
+        
+        const currentParams = { 
+            interval: questionObj.interval || 0, 
+            repetitions: questionObj.repetitions || 0, 
+            easeFactor: questionObj.easeFactor || 2.5 
+        };
+        
+        const timeTaken = questionObj.timeTaken || 3.0;
+        let nextInterval, nextRepetitions, nextEaseFactor;
+
+        if (!isCorrect) {
+            // CRASH
+            nextRepetitions = 0; 
+            nextInterval = 1; 
+            nextEaseFactor = Math.max(1.3, currentParams.easeFactor - 0.2); 
+        } else {
+            // FINISH
+            nextRepetitions = currentParams.repetitions + 1;
+            
+            // Speed Factor
+            let easeBonus = 0;
+            if (timeTaken < 1.2) easeBonus = 0.3;      // Fast
+            else if (timeTaken > 5.0) easeBonus = -0.15; // Slow
+            else easeBonus = 0.1;                      // Normal
+
+            let rawEase = currentParams.easeFactor + easeBonus;
+            nextEaseFactor = Math.min(3.0, Math.max(1.3, rawEase));
+
+            if (nextRepetitions === 1) nextInterval = 1; 
+            else if (nextRepetitions === 2) nextInterval = 6; 
+            else nextInterval = Math.max(1, Math.round(currentParams.interval * nextEaseFactor));
+            
+            console.log(`[SRS] Time: ${timeTaken.toFixed(2)}s | EF: ${currentParams.easeFactor.toFixed(2)} -> ${nextEaseFactor.toFixed(2)}`);
+        }
+
+        const nextDate = new Date(); 
+        nextDate.setDate(now.getDate() + nextInterval);
+
+        setDoc(targetRef, { 
+            word: questionObj.w, 
+            meaning: questionObj.meaning || questionObj.m, 
+            nextReview: Timestamp.fromDate(nextDate), 
+            interval: nextInterval, 
+            repetitions: nextRepetitions, 
+            easeFactor: nextEaseFactor, 
+            lastReviewed: Timestamp.fromDate(now) 
+        }, { merge: true })
+        .catch((e) => console.error("Telemetry Failed:", e));
+      };
+      
+      // ---------------------------------------------------------
+      // 4. LEADERBOARD RECORDER (NEW!)
+      // ---------------------------------------------------------
+      window.saveRaceResult = async (data) => {
+          if (!window.currentUser) return;
+          
+          try {
+              const leaderboardRef = collection(db, "leaderboard");
+              const now = new Date();
+              const dateStr = now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+              
+              const payload = {
+                  uid: window.currentUser.uid,
+                  driver: window.currentUser.displayName || "Unknown Driver",
+                  date: dateStr,            
+                  timestamp: Timestamp.now(), 
+                  ...data                   
+              };
+
+              await addDoc(leaderboardRef, payload);
+              console.log("[RACE CONTROL] Result saved to Leaderboard:", payload);
+              
+          } catch (e) {
+              console.error("[RACE CONTROL] Failed to save result:", e);
+          }
       };
 
-      window.incrementDailyLaps = async (acc, time) => {
-          if (!window.currentUser) return;
-          const today = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }).split(' ')[0];
-          await setDoc(doc(db, "stats", "daily_global"), { count: increment(1), date: today }, { merge: true });
-          await addDoc(collection(db, "leaderboard"), { uid: window.currentUser.uid, displayName: window.currentUser.displayName, accuracy: acc, totalTime: time, date: today, timestamp: Timestamp.now() });
+      window.incrementDailyLaps = () => {
+          const statsRef = doc(db, "stats", "daily_global");
+          const todayStr = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }).split(' ')[0];
+          
+          setDoc(statsRef, { 
+              count: increment(1), 
+              date: todayStr 
+          }, { merge: true });
       };
+    </script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('Service Worker Registered!', reg.scope))
+                    .catch(err => console.error('Service Worker Failed:', err));
+            });
+        }
     </script>
 </body>
 </html>
