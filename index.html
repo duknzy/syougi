@@ -10,8 +10,7 @@
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b0e14">
-    <link rel="apple-touch-icon" href="icon.png">
-
+    
     <title>RB Hybrid Learning System</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -53,10 +52,25 @@
 
         .carbon-bg {
             background-image: 
-                linear-gradient(rgba(11, 14, 20, 0.9), rgba(11, 14, 20, 0.95)),
-                url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
-            background-attachment: fixed;
+                /* 文字を読みやすくするための薄い黒フィルター(0.6) */
+                linear-gradient(rgba(11, 14, 20, 0.6), rgba(11, 14, 20, 0.7)),
+                /* アップロードされた画像ファイル名 (pngかavifか確認して合わせろ) */
+                url('./verstappen.png'); 
+            
             background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            
+            /* PCでは固定してパララックス効果を出す */
+            background-attachment: fixed; 
+        }
+
+        /* スマホ向けの特別チューニング（背景ズレ防止） */
+        @media only screen and (max-width: 768px) {
+            .carbon-bg {
+                background-attachment: scroll; 
+                min-height: 100vh; /* 画面いっぱいに伸ばす */
+            }
         }
 
         #app {
@@ -71,10 +85,14 @@
         #app::-webkit-scrollbar { display: none; }
 
         .race-card {
-            background: rgba(23, 28, 38, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            /* ★重要：ここを 0.85 から 0.4 に変更した。これで透ける。 */
+            background: rgba(23, 28, 38, 0.4);
+            
+            /* すりガラス効果 */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            
+            border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             border-top: 4px solid var(--f1-red);
         }
