@@ -33,28 +33,25 @@
         .f1-font { font-family: 'Chakra Petch', sans-serif; }
 
         .carbon-bg {
-            /* 修正版：スマホ対応セッティング */
             background-image: 
-                linear-gradient(rgba(11, 14, 20, 0.5), rgba(11, 14, 20, 0.6)),
-                url('./verstappen.avif');
+                /* 文字を読みやすくするための薄い黒フィルター(0.6) */
+                linear-gradient(rgba(11, 14, 20, 0.6), rgba(11, 14, 20, 0.7)),
+                /* アップロードされた画像ファイル名 (pngかavifか確認して合わせろ) */
+                url('./verstappen.avif'); 
             
             background-size: cover;
             background-position: center center;
             background-repeat: no-repeat;
             
-            /* 【重要】ここを変えた */
-            /* fixedはスマホ(iOS)でバグることがあるため、あえて scroll にするか、
-               あるいは body 全体に高さを指定して固定する方法がベストだが、
-               一旦これで様子を見ろ。もしスマホで画像が拡大されすぎるなら外せ。 */
+            /* PCでは固定してパララックス効果を出す */
             background-attachment: fixed; 
         }
 
-        /* スマホ(iOS Safari等)向けの特別チューニング */
+        /* スマホ向けの特別チューニング（背景ズレ防止） */
         @media only screen and (max-width: 768px) {
             .carbon-bg {
-                /* スマホでは背景固定を解除して、自然なスクロールに任せる方が安定する場合が多い */
                 background-attachment: scroll; 
-                min-height: 100vh;
+                min-height: 100vh; /* 画面いっぱいに伸ばす */
             }
         }
 
@@ -73,10 +70,14 @@
         ::-webkit-scrollbar-thumb:hover { background: var(--f1-red); }
 
         .race-card {
-            background: rgba(23, 28, 38, 0.9);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            /* ★重要：ここを 0.85 から 0.4 に変更した。これで透ける。 */
+            background: rgba(23, 28, 38, 0.4);
+            
+            /* すりガラス効果 */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            
+            border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             border-top: 4px solid var(--f1-red);
         }
@@ -329,13 +330,19 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-700">
                                 <div>
-                                    <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-3">Tire Strategy (Questions per Lap)</p>
-                                    <div class="flex justify-between gap-2">
-                                        <button onclick="quiz.setTireStrategy(10, 'soft')" id="tire-soft" class="tire-btn tire-soft flex-1 bg-black/40 text-gray-400 p-3 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase tracking-wider">🔴 S (10)</button>
-                                        <button onclick="quiz.setTireStrategy(20, 'medium')" id="tire-medium" class="tire-btn tire-medium active flex-1 bg-black/40 text-gray-400 p-3 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase tracking-wider">🟡 M (20)</button>
-                                        <button onclick="quiz.setTireStrategy(50, 'hard')" id="tire-hard" class="tire-btn tire-hard flex-1 bg-black/40 text-gray-400 p-3 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase tracking-wider">⚪ H (50)</button>
-                                    </div>
-                                </div>
+                        <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-2">Tire Strategy (Base Qty)</p>
+                        <div class="flex justify-between gap-2">
+                            <button onclick="quiz.setTireStrategy(10, 'soft')" id="tire-soft" class="tire-btn tire-soft flex-1 bg-black/40 text-gray-400 p-2 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase tracking-wider active:bg-gray-800">
+                                <span class="whitespace-nowrap">🔴 Soft</span><br>(10)
+                            </button>
+                            <button onclick="quiz.setTireStrategy(20, 'medium')" id="tire-medium" class="tire-btn tire-medium active flex-1 bg-black/40 text-gray-400 p-2 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase tracking-wider active:bg-gray-800">
+                                <span class="whitespace-nowrap">🟡 Medium</span><br>(20)
+                            </button>
+                            <button onclick="quiz.setTireStrategy(50, 'hard')" id="tire-hard" class="tire-btn tire-hard flex-1 bg-black/40 text-gray-400 p-2 rounded-lg border border-gray-600 f1-font text-xs font-bold uppercase tracking-wider active:bg-gray-800">
+                                <span class="whitespace-nowrap">⚪ Hard</span><br>(50)
+                            </button>
+                        </div>
+                    </div>
 
                                 <div class="grid grid-cols-2 gap-2">
                                     <label class="flex items-center justify-between cursor-pointer group p-2 bg-black/20 rounded border border-transparent hover:border-gray-600 transition-colors">
