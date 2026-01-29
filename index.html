@@ -2,16 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta id="viewport-meta" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-    <script>
-    // スマホ（幅768px以下）の時だけ、強制的に画面を縮小する
-    if (window.screen.width <= 768) {
-        const scale = 0.75; // ★ここを0.65〜0.85くらいで調整しろ
-        const viewport = document.getElementById('viewport-meta');
-        viewport.setAttribute('content', `width=device-width, initial-scale=${scale}, maximum-scale=${scale}, user-scalable=no`);
-    }
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -64,7 +55,7 @@
                 /* 文字を読みやすくするための薄い黒フィルター(0.6) */
                 linear-gradient(rgba(11, 14, 20, 0.6), rgba(11, 14, 20, 0.7)),
                 /* アップロードされた画像ファイル名 (pngかavifか確認して合わせろ) */
-                url('./akasi.png'); 
+                url('./beautiful.png'); 
             
             background-size: cover;
             background-position: center center;
@@ -224,7 +215,6 @@
             opacity: 1;
             pointer-events: auto;  /* クリックを確実に受け付ける */
         }
-       body {zoom: 0.5; }
     </style>
 </head>
 <body class="carbon-bg">
