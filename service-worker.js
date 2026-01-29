@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rb-hybrid-v2-transparent';
+const CACHE_NAME = 'rb-hybrid-v3-transparent';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
