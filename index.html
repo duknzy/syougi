@@ -4036,26 +4036,25 @@ lest: ～しないように
       // 4. LEADERBOARD RECORDER
       // ---------------------------------------------------------
       window.saveRaceResult = async (data) => {
-          if (!window.currentUser) return;
-          try {
-              const leaderboardRef = collection(db, "leaderboard");
-              const now = new Date();
-              const dateStr = now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
-              
-              const payload = {
-                  uid: window.currentUser.uid,
-                  driver: window.currentUser.displayName || "Unknown Driver",
-                  date: dateStr,            
-                  timestamp: Timestamp.now(), 
-                  ...data                   
-              };
-              await addDoc(leaderboardRef, payload);
-              console.log("[RACE CONTROL] Result saved to Leaderboard:", payload);
-          } catch (e) {
-              console.error("[RACE CONTROL] Failed to save result:", e);
-          }
-      };
-
+    console.log("[DEBUG] saveRaceResult called with data:", data); // 呼ばれたか確認
+    if (!window.currentUser) {
+        console.warn("[DEBUG] No User Auth - exiting");
+        return;
+    }
+    try {
+        const leaderboardRef = collection(db, "leaderboard");
+        const payload = {
+            uid: window.currentUser.uid,
+            driver: window.currentUser.displayName || "Unknown Driver",
+            timestamp: Timestamp.now(),
+            ...data                   
+        };
+        const docRef = await addDoc(leaderboardRef, payload);
+        console.log("[RACE CONTROL] Document written with ID: ", docRef.id);
+    } catch (e) {
+        console.error("[RACE CONTROL] Detailed Error:", e.code, e.message); // エラーコードを特定
+    }
+};
       // ---------------------------------------------------------
       // 5. BOOKMARK TOGGLER
       // ---------------------------------------------------------
