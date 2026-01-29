@@ -4036,26 +4036,37 @@ lest: ～しないように
       // 4. LEADERBOARD RECORDER
       // ---------------------------------------------------------
       window.saveRaceResult = async (data) => {
-          if (!window.currentUser) return;
-          try {
-              const leaderboardRef = collection(db, "leaderboard");
-              const now = new Date();
-              const dateStr = now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
-              
-              const payload = {
-                  uid: window.currentUser.uid,
-                  driver: window.currentUser.displayName || "Unknown Driver",
-                  date: dateStr,            
-                  timestamp: Timestamp.now(), 
-                  ...data                   
-              };
-              await addDoc(leaderboardRef, payload);
-              console.log("[RACE CONTROL] Result saved to Leaderboard:", payload);
-          } catch (e) {
-              console.error("[RACE CONTROL] Failed to save result:", e);
-          }
-      };
+    if (!window.currentUser) return;
+    try {
+        const now = new Date();
+        // ドキュメント名に使用する時刻フォーマット (例: 2026-01-29_154240-123)
+        const docId = now.getFullYear() + "-" +
+            ("0" + (now.getMonth() + 1)).slice(-2) + "-" +
+            ("0" + now.getDate()).slice(-2) + "_" +
+            ("0" + now.getHours()).slice(-2) +
+            ("0" + now.getMinutes()).slice(-2) +
+            ("0" + now.getSeconds()).slice(-2) + "-" +
+            ("00" + now.getMilliseconds()).slice(-4);
 
+        // collection() ではなく doc() でパスと名前を直接指定する
+        const leaderboardDocRef = doc(db, "leaderboard", docId);
+
+        const payload = {
+            uid: window.currentUser.uid,
+            driver: window.currentUser.displayName || "Unknown Driver",
+            date: now.toLocaleString('ja-JP'),
+            timestamp: Timestamp.now(), 
+            ...data                   
+        };
+
+        // setDoc を使って指定した docId で保存
+        await setDoc(leaderboardDocRef, payload);
+        
+        console.log(`[RACE CONTROL] Result Logged as: ${docId}`);
+    } catch (e) {
+        console.error("[RACE CONTROL] Failed to save result:", e);
+    }
+};
       // ---------------------------------------------------------
       // 5. BOOKMARK TOGGLER
       // ---------------------------------------------------------
