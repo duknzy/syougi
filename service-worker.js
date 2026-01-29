@@ -1,57 +1,44 @@
-const CACHE_NAME = 'rb-hybrid-v1';
-const STATIC_ASSETS = [
+const CACHE_NAME = 'rb-hybrid-v2-transparent';
+const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './icon.png'
+  './icon.png',
+  './verstappen.png' 
 ];
+// ※ verstappen.png か verstappen.avif か、実際に使っているファイル名に合わせて修正すること
 
-// 1. Install Event: 最小限のファイルをキャッシュ
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[Service Worker] Caching App Shell');
-      return cache.addAll(STATIC_ASSETS);
+      return cache.addAll(ASSETS_TO_CACHE);
     })
   );
-  self.skipWaiting();
 });
 
-// 2. Activate Event: 古いキャッシュを削除
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-      );
-    })
-  );
-  self.clients.claim();
-});
-
-// 3. Fetch Event: ネットワーク優先、失敗したらキャッシュ (Network First Strategy)
 self.addEventListener('fetch', (event) => {
-  // FirestoreやAuthの通信はキャッシュしない（リアルタイム性重視）
+  // FirestoreやAuthなどの動的通信はキャッシュしない（ネットワーク優先）
   if (event.request.url.includes('firestore.googleapis.com') || 
-      event.request.url.includes('googleapis.com') ||
-      event.request.url.includes('google-analytics.com')) {
+      event.request.url.includes('googleapis.com')) {
     return;
   }
 
   event.respondWith(
-    caches.open(CACHE_NAME).then((cache) => {
-      return fetch(event.request)
-        .then((response) => {
-          // CDNなどの外部リソースも動的にキャッシュに追加する
-          if (response.status === 200) {
-            cache.put(event.request, response.clone());
-          }
-          return response;
-        })
-        .catch(() => {
-          // オフライン時はキャッシュから返す
-          return cache.match(event.request);
-        });
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keyList) => {
+      return Promise.all(keyList.map((key) => {
+        if (key !== CACHE_NAME) {
+          return caches.delete(key);
+        }
+      }));
     })
   );
 });
