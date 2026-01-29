@@ -4036,23 +4036,35 @@ lest: ～しないように
       // 4. LEADERBOARD RECORDER
       // ---------------------------------------------------------
       window.saveRaceResult = async (data) => {
-    console.log("[DEBUG] saveRaceResult called with data:", data); // 呼ばれたか確認
-    if (!window.currentUser) {
-        console.warn("[DEBUG] No User Auth - exiting");
-        return;
-    }
+    if (!window.currentUser) return;
     try {
-        const leaderboardRef = collection(db, "leaderboard");
+        const now = new Date();
+        // ドキュメント名に使用する時刻フォーマット (例: 2026-01-29_154240-123)
+        const docId = now.getFullYear() + "-" +
+            ("0" + (now.getMonth() + 1)).slice(-2) + "-" +
+            ("0" + now.getDate()).slice(-2) + "_" +
+            ("0" + now.getHours()).slice(-2) +
+            ("0" + now.getMinutes()).slice(-2) +
+            ("0" + now.getSeconds()).slice(-2) + "-" +
+            ("00" + now.getMilliseconds()).slice(-4);
+
+        // collection() ではなく doc() でパスと名前を直接指定する
+        const leaderboardDocRef = doc(db, "leaderboard", docId);
+
         const payload = {
             uid: window.currentUser.uid,
             driver: window.currentUser.displayName || "Unknown Driver",
-            timestamp: Timestamp.now(),
+            date: now.toLocaleString('ja-JP'),
+            timestamp: Timestamp.now(), 
             ...data                   
         };
-        const docRef = await addDoc(leaderboardRef, payload);
-        console.log("[RACE CONTROL] Document written with ID: ", docRef.id);
+
+        // setDoc を使って指定した docId で保存
+        await setDoc(leaderboardDocRef, payload);
+        
+        console.log(`[RACE CONTROL] Result Logged as: ${docId}`);
     } catch (e) {
-        console.error("[RACE CONTROL] Detailed Error:", e.code, e.message); // エラーコードを特定
+        console.error("[RACE CONTROL] Failed to save result:", e);
     }
 };
       // ---------------------------------------------------------
