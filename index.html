@@ -2,7 +2,16 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta id="viewport-meta" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <script>
+    // スマホ（幅768px以下）の時だけ、強制的に画面を縮小する
+    if (window.screen.width <= 768) {
+        const scale = 0.75; // ★ここを0.65〜0.85くらいで調整しろ
+        const viewport = document.getElementById('viewport-meta');
+        viewport.setAttribute('content', `width=device-width, initial-scale=${scale}, maximum-scale=${scale}, user-scalable=no`);
+    }
+    </script>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
