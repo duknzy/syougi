@@ -4,7 +4,7 @@ const ASSETS_TO_CACHE = [
   './index.html',
   './manifest.json',
   './icon.png',
-  './verstappen.png' 
+  './verstappen.avif' 
 ];
 // ※ verstappen.png か verstappen.avif か、実際に使っているファイル名に合わせて修正すること
 
