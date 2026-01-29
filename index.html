@@ -50,11 +50,29 @@
         .f1-font { font-family: 'Chakra Petch', sans-serif; }
 
         .carbon-bg {
+            /* 修正版：スマホ対応セッティング */
             background-image: 
-                linear-gradient(rgba(11, 14, 20, 0.9), rgba(11, 14, 20, 0.95)),
-                url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
-            background-attachment: fixed;
+                linear-gradient(rgba(11, 14, 20, 0.7), rgba(11, 14, 20, 0.8)),
+                url('./verstappen.avif');
+            
             background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            
+            /* 【重要】ここを変えた */
+            /* fixedはスマホ(iOS)でバグることがあるため、あえて scroll にするか、
+               あるいは body 全体に高さを指定して固定する方法がベストだが、
+               一旦これで様子を見ろ。もしスマホで画像が拡大されすぎるなら外せ。 */
+            background-attachment: fixed; 
+        }
+
+        /* スマホ(iOS Safari等)向けの特別チューニング */
+        @media only screen and (max-width: 768px) {
+            .carbon-bg {
+                /* スマホでは背景固定を解除して、自然なスクロールに任せる方が安定する場合が多い */
+                background-attachment: scroll; 
+                min-height: 100vh;
+            }
         }
 
         #app {
